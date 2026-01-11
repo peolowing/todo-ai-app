@@ -26,7 +26,7 @@ import { sv } from 'date-fns/locale'
 export default function App() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('tasks') // tasks, notes
+  const [activeTab, setActiveTab] = useState('notes') // tasks, notes - Default to notes
   const [filter, setFilter] = useState('all') // all, active, completed
   const [selectedList, setSelectedList] = useState(null)
 

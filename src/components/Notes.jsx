@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Edit2, Trash2, Save, X, FileText, Search, Sparkles, Loader2, CheckSquare, StickyNote, Image as ImageIcon, ArrowLeft } from 'lucide-react'
+import { Plus, Edit2, Trash2, Save, X, FileText, Search, Sparkles, Loader2, CheckSquare, StickyNote, Image as ImageIcon, ArrowLeft, ChevronDown } from 'lucide-react'
 import { format } from 'date-fns'
 import { sv } from 'date-fns/locale'
 import toast from 'react-hot-toast'
@@ -16,7 +16,21 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
   const [previewTasks, setPreviewTasks] = useState([])
   const [selectedCategory, setSelectedCategory] = useState('Alla') // 'Alla' = visa alla kategorier
   const [showMobileEditor, setShowMobileEditor] = useState(false) // För mobilvy
+  const [showAIDropdown, setShowAIDropdown] = useState(false) // För AI-dropdown
   const fileInputRef = useRef(null)
+  const aiDropdownRef = useRef(null)
+
+  // Stäng AI-dropdown när man klickar utanför
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (aiDropdownRef.current && !aiDropdownRef.current.contains(event.target)) {
+        setShowAIDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // Filtrera först baserat på sökning
   let filteredNotes = notes.filter(note =>
@@ -432,15 +446,132 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
 
       {/* Huvudinnehåll - Redigeringsområde - Visa i helskärm på mobil */}
       <div className={`relative ${showMobileEditor ? 'flex lg:block' : 'hidden lg:block'}`}>
-        {/* Ny anteckning-knapp - diskret i övre högra hörnet */}
-        <button
-          onClick={handleCreateNew}
-          className="absolute top-4 right-4 z-10 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1.5 border border-gray-300"
-          title="Skapa ny anteckning"
-        >
-          <Plus className="w-4 h-4" />
-          Ny
-        </button>
+        {/* Knappar i övre högra hörnet */}
+        <div className="absolute top-4 right-4 z-10 flex gap-2">
+          {/* Spara och Avbryt-knappar (när editing) */}
+          {isEditing && (
+            <>
+              <button
+                onClick={handleSave}
+                className="p-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
+                title="Spara"
+              >
+                <Save className="w-5 h-5" />
+              </button>
+              <button
+                onClick={handleCancel}
+                className="p-2 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg transition-colors"
+                title="Avbryt"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </>
+          )}
+
+          {/* Ta bort-knapp (när inte editing) */}
+          {selectedNote && !isEditing && (
+            <button
+              onClick={() => handleDelete(selectedNote.id)}
+              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+              title="Ta bort"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          )}
+
+          {/* Ny anteckning-knapp */}
+          <button
+            onClick={handleCreateNew}
+            className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1.5 border border-gray-300"
+            title="Skapa ny anteckning"
+          >
+            <Plus className="w-4 h-4" />
+            Ny
+          </button>
+
+          {/* AI Dropdown */}
+          {editData.content.trim() && (
+            <div className="relative" ref={aiDropdownRef}>
+              <button
+                onClick={() => setShowAIDropdown(!showAIDropdown)}
+                disabled={aiLoading}
+                className="px-3 py-1.5 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                title="AI-funktioner"
+              >
+                {aiLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Sparkles className="w-4 h-4" />
+                )}
+                AI
+                <ChevronDown className="w-3 h-3" />
+              </button>
+
+              {/* Dropdown meny */}
+              <AnimatePresence>
+                {showAIDropdown && !aiLoading && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden"
+                  >
+                    <button
+                      onClick={() => {
+                        fileInputRef.current?.click()
+                        setShowAIDropdown(false)
+                      }}
+                      className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors border-b border-gray-100"
+                    >
+                      <ImageIcon className="w-4 h-4 text-green-500" />
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">Läs bild</div>
+                        <div className="text-xs text-gray-500">Extrahera text från bild</div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        handleStructureNotes()
+                        setShowAIDropdown(false)
+                      }}
+                      className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors border-b border-gray-100"
+                    >
+                      <StickyNote className="w-4 h-4 text-blue-500" />
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">Strukturera</div>
+                        <div className="text-xs text-gray-500">Dela upp i anteckningar</div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        handleExtractTasks()
+                        setShowAIDropdown(false)
+                      }}
+                      className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                    >
+                      <CheckSquare className="w-4 h-4 text-purple-500" />
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">Skapa uppgifter</div>
+                        <div className="text-xs text-gray-500">Extrahera till-do items</div>
+                      </div>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Dold file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            </div>
+          )}
+        </div>
 
         <div className="task-card h-full flex flex-col">
           {!isCreating && !selectedNote ? (
@@ -489,93 +620,6 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                       <option key={cat} value={cat} />
                     ))}
                   </datalist>
-                </div>
-              </div>
-              <div className="flex items-center justify-end gap-2 mb-4">
-                <div className="flex gap-2">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={aiLoading}
-                    className="px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 text-sm"
-                    title="Läs in bild"
-                  >
-                    {aiLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <>
-                        <ImageIcon className="w-4 h-4" />
-                        Läs bild
-                      </>
-                    )}
-                  </button>
-                  {editData.content.trim() && (
-                    <>
-                      <button
-                        onClick={handleStructureNotes}
-                        disabled={aiLoading}
-                        className="px-3 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 text-sm"
-                        title="Strukturera anteckningar"
-                      >
-                        {aiLoading ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <>
-                            <StickyNote className="w-4 h-4" />
-                            Strukturera
-                          </>
-                        )}
-                      </button>
-                      <button
-                        onClick={handleExtractTasks}
-                        disabled={aiLoading}
-                        className="px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 text-sm"
-                        title="Extrahera uppgifter"
-                      >
-                        {aiLoading ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <>
-                            <CheckSquare className="w-4 h-4" />
-                            Skapa uppgifter
-                          </>
-                        )}
-                      </button>
-                    </>
-                  )}
-                  {isEditing && (
-                    <>
-                      <button
-                        onClick={handleSave}
-                        className="p-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
-                        title="Spara"
-                      >
-                        <Save className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={handleCancel}
-                        className="p-2 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg transition-colors"
-                        title="Avbryt"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
-                    </>
-                  )}
-                  {selectedNote && !isEditing && (
-                    <button
-                      onClick={() => handleDelete(selectedNote.id)}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                      title="Ta bort"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  )}
                 </div>
               </div>
 
