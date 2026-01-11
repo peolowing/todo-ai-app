@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Edit2, Trash2, Save, X, FileText, Search, Sparkles, Loader2, CheckSquare, StickyNote, Image as ImageIcon, ArrowLeft, ChevronDown } from 'lucide-react'
+import { Plus, Edit2, Trash2, Save, X, FileText, Search, Sparkles, Loader2, CheckSquare, StickyNote, Image as ImageIcon, ArrowLeft, ChevronDown, Bold, Italic, Underline, List, ListOrdered, Type } from 'lucide-react'
 import { format } from 'date-fns'
 import { sv } from 'date-fns/locale'
 import toast from 'react-hot-toast'
@@ -20,8 +20,10 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
   const [showAIDropdown, setShowAIDropdown] = useState(false) // För AI-dropdown
   const [showCustomPrompt, setShowCustomPrompt] = useState(false) // För egen prompt modal
   const [customPrompt, setCustomPrompt] = useState('') // Egen prompt text
+  const [fontSize, setFontSize] = useState('16px') // Font size state
   const fileInputRef = useRef(null)
   const aiDropdownRef = useRef(null)
+  const editorRef = useRef(null)
 
   // Stäng AI-dropdown när man klickar utanför
   useEffect(() => {
@@ -88,11 +90,44 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
     return categoryColors[index % categoryColors.length]
   }
 
+  // Synka editData med editorRef när en anteckning väljs
+  useEffect(() => {
+    if (editorRef.current && editData.content !== undefined) {
+      // Spara cursor position
+      const selection = window.getSelection()
+      const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null
+      const offset = range ? range.startOffset : 0
+
+      // Endast uppdatera om innehållet är olika
+      if (editorRef.current.innerHTML !== editData.content) {
+        editorRef.current.innerHTML = editData.content || ''
+
+        // Försök återställa cursor position om möjligt
+        try {
+          if (range && editorRef.current.firstChild) {
+            const newRange = document.createRange()
+            const textNode = editorRef.current.firstChild
+            newRange.setStart(textNode, Math.min(offset, textNode.textContent?.length || 0))
+            newRange.collapse(true)
+            selection.removeAllRanges()
+            selection.addRange(newRange)
+          }
+        } catch (e) {
+          // Ignore cursor restoration errors
+        }
+      }
+    }
+  }, [editData.content])
+
   function handleCreateNew() {
     setIsCreating(true)
     setSelectedNote(null)
     setEditData({ title: '', content: '', category: selectedCategory || 'Allmänt' })
     setShowMobileEditor(true) // Visa editor i mobilvy
+    // Focus på editor efter en kort fördröjning
+    setTimeout(() => {
+      editorRef.current?.focus()
+    }, 100)
   }
 
   function handleSelectNote(note) {
@@ -104,6 +139,10 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
       category: note.category || 'Allmänt'
     })
     setShowMobileEditor(true) // Visa editor i mobilvy
+    // Focus på editor efter en kort fördröjning
+    setTimeout(() => {
+      editorRef.current?.focus()
+    }, 100)
   }
 
   function handleBackToList() {
@@ -335,24 +374,69 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
     }
   }
 
-  // Hantera keyboard shortcuts i textarea
-  function handleTextareaKeyDown(event) {
+  // Formaterings-funktioner för rich text editor
+  function applyFormat(command, value = null) {
+    document.execCommand(command, false, value)
+    editorRef.current?.focus()
+  }
+
+  function handleBold() {
+    applyFormat('bold')
+  }
+
+  function handleItalic() {
+    applyFormat('italic')
+  }
+
+  function handleUnderline() {
+    applyFormat('underline')
+  }
+
+  function handleBulletList() {
+    applyFormat('insertUnorderedList')
+  }
+
+  function handleNumberedList() {
+    applyFormat('insertOrderedList')
+  }
+
+  function handleFontSizeChange(size) {
+    setFontSize(size)
+    if (editorRef.current) {
+      editorRef.current.style.fontSize = size
+    }
+  }
+
+  // Hantera innehållsändringar i contentEditable
+  function handleEditorInput() {
+    if (editorRef.current) {
+      const htmlContent = editorRef.current.innerHTML
+      setEditData(prev => ({ ...prev, content: htmlContent }))
+    }
+  }
+
+  // Hantera keyboard shortcuts i editor
+  function handleEditorKeyDown(event) {
     // Ctrl/Cmd + D -> Infoga dagens datum
     if ((event.metaKey || event.ctrlKey) && event.key === 'd') {
       event.preventDefault()
       const today = format(new Date(), 'yyyy-MM-dd (EEEE)', { locale: sv })
-      const textarea = event.target
-      const start = textarea.selectionStart
-      const end = textarea.selectionEnd
-      const text = editData.content
-
-      const newText = text.substring(0, start) + today + text.substring(end)
-      setEditData(prev => ({ ...prev, content: newText }))
-
-      // Placera cursor efter det infogade datumet
-      setTimeout(() => {
-        textarea.selectionStart = textarea.selectionEnd = start + today.length
-      }, 0)
+      document.execCommand('insertText', false, today)
+    }
+    // Ctrl/Cmd + B -> Bold
+    if ((event.metaKey || event.ctrlKey) && event.key === 'b') {
+      event.preventDefault()
+      handleBold()
+    }
+    // Ctrl/Cmd + I -> Italic
+    if ((event.metaKey || event.ctrlKey) && event.key === 'i') {
+      event.preventDefault()
+      handleItalic()
+    }
+    // Ctrl/Cmd + U -> Underline
+    if ((event.metaKey || event.ctrlKey) && event.key === 'u') {
+      event.preventDefault()
+      handleUnderline()
     }
   }
 
@@ -806,12 +890,97 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                 </p>
               )}
 
-              <textarea
-                value={editData.content}
-                onChange={(e) => setEditData(prev => ({ ...prev, content: e.target.value }))}
-                onKeyDown={handleTextareaKeyDown}
-                placeholder={isCreating ? "Skriv eller klistra in din text här...\n\nTips:\n• Tryck Ctrl/Cmd + D för att infoga dagens datum\n• AI kan strukturera texter och extrahera uppgifter\n• Ladda upp bilder för att extrahera text" : "Skriv dina anteckningar här...\n\nTryck Ctrl/Cmd + D för att infoga datum"}
-                className="flex-1 w-full border border-gray-200 rounded-lg p-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-sans"
+              {/* Text Editor Toolbar */}
+              <div className="border border-gray-200 rounded-t-lg bg-gray-50 px-2 py-2 flex flex-wrap items-center gap-1">
+                {/* Font Size */}
+                <select
+                  value={fontSize}
+                  onChange={(e) => handleFontSizeChange(e.target.value)}
+                  className="text-xs px-2 py-1 border border-gray-300 rounded hover:bg-white transition-colors"
+                  title="Fontstorlek"
+                >
+                  <option value="12px">12px</option>
+                  <option value="14px">14px</option>
+                  <option value="16px">16px</option>
+                  <option value="18px">18px</option>
+                  <option value="20px">20px</option>
+                  <option value="24px">24px</option>
+                </select>
+
+                <div className="w-px h-6 bg-gray-300 mx-1"></div>
+
+                {/* Bold */}
+                <button
+                  type="button"
+                  onClick={handleBold}
+                  className="p-1.5 hover:bg-gray-200 rounded transition-colors"
+                  title="Fetstil (Ctrl+B)"
+                >
+                  <Bold className="w-4 h-4 text-gray-700" />
+                </button>
+
+                {/* Italic */}
+                <button
+                  type="button"
+                  onClick={handleItalic}
+                  className="p-1.5 hover:bg-gray-200 rounded transition-colors"
+                  title="Kursiv (Ctrl+I)"
+                >
+                  <Italic className="w-4 h-4 text-gray-700" />
+                </button>
+
+                {/* Underline */}
+                <button
+                  type="button"
+                  onClick={handleUnderline}
+                  className="p-1.5 hover:bg-gray-200 rounded transition-colors"
+                  title="Understruken (Ctrl+U)"
+                >
+                  <Underline className="w-4 h-4 text-gray-700" />
+                </button>
+
+                <div className="w-px h-6 bg-gray-300 mx-1"></div>
+
+                {/* Bullet List */}
+                <button
+                  type="button"
+                  onClick={handleBulletList}
+                  className="p-1.5 hover:bg-gray-200 rounded transition-colors"
+                  title="Punktlista"
+                >
+                  <List className="w-4 h-4 text-gray-700" />
+                </button>
+
+                {/* Numbered List */}
+                <button
+                  type="button"
+                  onClick={handleNumberedList}
+                  className="p-1.5 hover:bg-gray-200 rounded transition-colors"
+                  title="Numrerad lista"
+                >
+                  <ListOrdered className="w-4 h-4 text-gray-700" />
+                </button>
+
+                <div className="flex-1"></div>
+
+                <p className="text-xs text-gray-500">
+                  Ctrl+D: Datum | Ctrl+B/I/U: Formatering
+                </p>
+              </div>
+
+              {/* Rich Text Editor */}
+              <div
+                ref={editorRef}
+                contentEditable
+                onInput={handleEditorInput}
+                onKeyDown={handleEditorKeyDown}
+                suppressContentEditableWarning
+                className="flex-1 w-full border border-gray-200 border-t-0 rounded-b-lg p-4 focus:ring-2 focus:ring-blue-500 focus:outline-none overflow-y-auto font-sans"
+                style={{
+                  fontSize: fontSize,
+                  minHeight: '300px'
+                }}
+                data-placeholder={isCreating ? "Skriv eller klistra in din text här...\n\nTips:\n• Tryck Ctrl/Cmd + D för att infoga dagens datum\n• AI kan strukturera texter och extrahera uppgifter\n• Ladda upp bilder för att extrahera text" : "Skriv dina anteckningar här...\n\nTryck Ctrl/Cmd + D för att infoga datum"}
               />
             </>
           )}

@@ -35,4 +35,39 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Rich Text Editor Styles */
+  [contenteditable]:empty:before {
+    content: attr(data-placeholder);
+    color: #9CA3AF;
+    pointer-events: none;
+    white-space: pre-wrap;
+  }
+
+  [contenteditable] {
+    outline: none;
+  }
+
+  [contenteditable] ul,
+  [contenteditable] ol {
+    margin-left: 1.5rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  [contenteditable] li {
+    margin-bottom: 0.25rem;
+  }
+
+  [contenteditable] strong {
+    font-weight: 700;
+  }
+
+  [contenteditable] em {
+    font-style: italic;
+  }
+
+  [contenteditable] u {
+    text-decoration: underline;
+  }
 }
