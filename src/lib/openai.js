@@ -289,6 +289,31 @@ Regler för TASKS:
   }
 }
 
+// Egen prompt - låter användaren skriva sin egen instruktion
+export async function processCustomPrompt(text, userPrompt) {
+  try {
+    const response = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'system',
+          content: 'Du är en AI-assistent som hjälper användare med deras anteckningar. Följ användarens instruktioner nedan.'
+        },
+        {
+          role: 'user',
+          content: `Här är anteckningen:\n\n${text}\n\nInstruktion: ${userPrompt}`
+        }
+      ],
+      temperature: 0.7
+    })
+
+    return response.choices[0].message.content
+  } catch (error) {
+    console.error('Error processing custom prompt:', error)
+    throw getOpenAIError(error)
+  }
+}
+
 // Helper function för felhantering - returnerar ett Error-objekt
 function getOpenAIError(error) {
   if (error.status === 401) {

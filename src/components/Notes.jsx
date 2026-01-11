@@ -4,7 +4,7 @@ import { Plus, Edit2, Trash2, Save, X, FileText, Search, Sparkles, Loader2, Chec
 import { format } from 'date-fns'
 import { sv } from 'date-fns/locale'
 import toast from 'react-hot-toast'
-import { structureNotesOnly, extractTasksOnly, extractTextFromImage } from '../lib/openai'
+import { structureNotesOnly, extractTasksOnly, extractTextFromImage, processCustomPrompt } from '../lib/openai'
 
 export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote, onCreateTask }) {
   const [selectedNote, setSelectedNote] = useState(null)
@@ -17,6 +17,8 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
   const [selectedCategory, setSelectedCategory] = useState('Alla') // 'Alla' = visa alla kategorier
   const [showMobileEditor, setShowMobileEditor] = useState(false) // För mobilvy
   const [showAIDropdown, setShowAIDropdown] = useState(false) // För AI-dropdown
+  const [showCustomPrompt, setShowCustomPrompt] = useState(false) // För egen prompt modal
+  const [customPrompt, setCustomPrompt] = useState('') // Egen prompt text
   const fileInputRef = useRef(null)
   const aiDropdownRef = useRef(null)
 
@@ -262,6 +264,35 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
     setPreviewTasks([])
   }
 
+  // Hantera egen prompt
+  async function handleCustomPrompt() {
+    if (!customPrompt.trim()) {
+      toast.error('Skriv en instruktion först')
+      return
+    }
+
+    setAiLoading(true)
+    setShowCustomPrompt(false)
+
+    try {
+      const result = await processCustomPrompt(editData.content, customPrompt)
+
+      // Uppdatera innehållet med AI:s svar
+      setEditData(prev => ({
+        ...prev,
+        content: result
+      }))
+
+      setCustomPrompt('') // Rensa prompt
+      toast.success('AI har bearbetat din anteckning!')
+    } catch (error) {
+      console.error('Error processing custom prompt:', error)
+      toast.error(`Fel: ${error.message || 'Kunde inte bearbeta anteckning'}`)
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
   // Hantera bilduppladdning
   async function handleImageUpload(event) {
     const file = event.target.files?.[0]
@@ -331,9 +362,9 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
   ))
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[460px_1fr] gap-6 h-[calc(100vh-12rem)]">
+    <div className="grid grid-cols-1 lg:grid-cols-[460px_1fr] gap-2 lg:gap-6 h-[calc(100vh-12rem)]">
       {/* Sidebar - Lista med anteckningar - Dölj i mobilvy när editor visas */}
-      <div className={`flex flex-col gap-4 ${showMobileEditor ? 'hidden lg:flex' : 'flex'}`}>
+      <div className={`flex flex-col gap-2 lg:gap-4 ${showMobileEditor ? 'hidden lg:flex' : 'flex'}`}>
         <div className="task-card flex-1 overflow-hidden flex flex-row gap-0">
           {/* Vertikala kategori-flikar till vänster */}
           <div className="w-36 border-r border-gray-200 py-2 flex flex-col gap-1 overflow-y-auto scrollbar-hide">
@@ -518,20 +549,6 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                   >
                     <button
                       onClick={() => {
-                        fileInputRef.current?.click()
-                        setShowAIDropdown(false)
-                      }}
-                      className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors border-b border-gray-100"
-                    >
-                      <ImageIcon className="w-4 h-4 text-green-500" />
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">Läs bild</div>
-                        <div className="text-xs text-gray-500">Extrahera text från bild</div>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => {
                         handleStructureNotes()
                         setShowAIDropdown(false)
                       }}
@@ -549,12 +566,40 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                         handleExtractTasks()
                         setShowAIDropdown(false)
                       }}
-                      className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                      className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors border-b border-gray-100"
                     >
                       <CheckSquare className="w-4 h-4 text-purple-500" />
                       <div>
                         <div className="text-sm font-medium text-gray-900">Skapa uppgifter</div>
                         <div className="text-xs text-gray-500">Extrahera till-do items</div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setShowCustomPrompt(true)
+                        setShowAIDropdown(false)
+                      }}
+                      className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors border-b border-gray-100"
+                    >
+                      <Sparkles className="w-4 h-4 text-amber-500" />
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">Egen prompt</div>
+                        <div className="text-xs text-gray-500">Skriv egna AI-instruktioner</div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        fileInputRef.current?.click()
+                        setShowAIDropdown(false)
+                      }}
+                      className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                    >
+                      <ImageIcon className="w-4 h-4 text-green-500" />
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">Läs bild</div>
+                        <div className="text-xs text-gray-500">Extrahera text från bild</div>
                       </div>
                     </button>
                   </motion.div>
@@ -583,7 +628,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
             </div>
           ) : (
             <>
-              <div className="space-y-3 mb-4">
+              <div className="space-y-2 lg:space-y-3 mb-2 lg:mb-4">
                 {/* Tillbakaknapp och rubrik för mobil */}
                 <div className="flex items-center gap-2">
                   {/* Tillbakaknapp - endast mobil */}
@@ -660,20 +705,6 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                             >
                               <button
                                 onClick={() => {
-                                  fileInputRef.current?.click()
-                                  setShowAIDropdown(false)
-                                }}
-                                className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors border-b border-gray-100"
-                              >
-                                <ImageIcon className="w-4 h-4 text-green-500" />
-                                <div>
-                                  <div className="text-sm font-medium text-gray-900">Läs bild</div>
-                                  <div className="text-xs text-gray-500">Extrahera text från bild</div>
-                                </div>
-                              </button>
-
-                              <button
-                                onClick={() => {
                                   handleStructureNotes()
                                   setShowAIDropdown(false)
                                 }}
@@ -691,12 +722,40 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                                   handleExtractTasks()
                                   setShowAIDropdown(false)
                                 }}
-                                className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                                className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors border-b border-gray-100"
                               >
                                 <CheckSquare className="w-4 h-4 text-purple-500" />
                                 <div>
                                   <div className="text-sm font-medium text-gray-900">Skapa uppgifter</div>
                                   <div className="text-xs text-gray-500">Extrahera till-do items</div>
+                                </div>
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  setShowCustomPrompt(true)
+                                  setShowAIDropdown(false)
+                                }}
+                                className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors border-b border-gray-100"
+                              >
+                                <Sparkles className="w-4 h-4 text-amber-500" />
+                                <div>
+                                  <div className="text-sm font-medium text-gray-900">Egen prompt</div>
+                                  <div className="text-xs text-gray-500">Skriv egna AI-instruktioner</div>
+                                </div>
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  fileInputRef.current?.click()
+                                  setShowAIDropdown(false)
+                                }}
+                                className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                              >
+                                <ImageIcon className="w-4 h-4 text-green-500" />
+                                <div>
+                                  <div className="text-sm font-medium text-gray-900">Läs bild</div>
+                                  <div className="text-xs text-gray-500">Extrahera text från bild</div>
                                 </div>
                               </button>
                             </motion.div>
@@ -833,6 +892,82 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                 >
                   <CheckSquare className="w-4 h-4" />
                   Skapa {previewTasks.length} uppgift{previewTasks.length > 1 ? 'er' : ''}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Custom Prompt Modal */}
+      <AnimatePresence>
+        {showCustomPrompt && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col"
+            >
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Egen AI-prompt</h2>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Skriv instruktioner för hur AI ska bearbeta din anteckning
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowCustomPrompt(false)
+                      setCustomPrompt('')
+                    }}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6">
+                <textarea
+                  value={customPrompt}
+                  onChange={(e) => setCustomPrompt(e.target.value)}
+                  placeholder="T.ex: 'Översätt till engelska', 'Sammanfatta i 3 punkter', 'Gör om till en lista', 'Rätta grammatiken'"
+                  className="w-full h-32 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                  autoFocus
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  AI kommer att använda dina instruktioner för att bearbeta anteckningens innehåll.
+                </p>
+              </div>
+
+              <div className="p-6 border-t border-gray-200 bg-gray-50 flex gap-3 justify-end">
+                <button
+                  onClick={() => {
+                    setShowCustomPrompt(false)
+                    setCustomPrompt('')
+                  }}
+                  className="px-6 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+                >
+                  Avbryt
+                </button>
+                <button
+                  onClick={handleCustomPrompt}
+                  disabled={!customPrompt.trim() || aiLoading}
+                  className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 rounded-lg transition-colors font-medium flex items-center gap-2 disabled:opacity-50"
+                >
+                  {aiLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Bearbetar...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      Kör AI
+                    </>
+                  )}
                 </button>
               </div>
             </motion.div>
