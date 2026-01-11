@@ -1,4 +1,14 @@
 Backlog:
 
 Funktioner:
-Arkiv för anteckningar
+1. Arkiv för anteckningar
+2. Effektivisera layput för Uppgifter
+3. Kategorisera Uppgifter
+4. Bifoga filer till anteckningar
+5. Länka en uppgift till en anteckning
+6. Dashboard över uppgifter och kopplade anteckningar för dagen och veckan
+7. Länka till externa dokument eller webbsidor från anteckningar
+8. Skapa ny anteckning av markerad text i en befintlig anteckning
+9. Exportera och importera anteckningar och uppgifter, Backup
+10. Kunna maila in till anteckningar
+11. 

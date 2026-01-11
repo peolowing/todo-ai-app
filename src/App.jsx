@@ -30,6 +30,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('notes') // tasks, notes - Default to notes
   const [filter, setFilter] = useState('all') // all, active, completed
   const [selectedList, setSelectedList] = useState(null)
+  const [selectedCategory, setSelectedCategory] = useState('all') // Kategorifilter för uppgifter
 
   const {
     tasks,
@@ -103,9 +104,11 @@ export default function App() {
   }
 
   const lists = [...new Set(tasks.map(t => t.list_name).filter(Boolean))]
-  
+  const categories = ['all', ...new Set(tasks.map(t => t.category || 'Allmänt'))]
+
   const filteredTasks = tasks.filter(task => {
     if (selectedList && task.list_name !== selectedList) return false
+    if (selectedCategory !== 'all' && (task.category || 'Allmänt') !== selectedCategory) return false
     if (filter === 'active') return !task.completed
     if (filter === 'completed') return task.completed
     return true
@@ -304,6 +307,26 @@ export default function App() {
                 </div>
               </div>
             )}
+
+            {/* Category Filter */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-100">
+              <h2 className="font-semibold text-gray-900 mb-4">Kategorier</h2>
+              <div className="space-y-2">
+                {categories.map(category => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`w-full text-left px-3 py-2 rounded-lg transition-all ${
+                      selectedCategory === category
+                        ? 'bg-purple-50 text-purple-700 font-medium'
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    {category === 'all' ? 'Alla kategorier' : category}
+                  </button>
+                ))}
+              </div>
+            </div>
           </aside>
 
           {/* Main Content */}
