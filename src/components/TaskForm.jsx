@@ -1,10 +1,10 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { motion } from 'framer-motion'
 import { Plus, X, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-export default function TaskForm({ onTaskCreated }) {
-  const [isOpen, setIsOpen] = useState(false)
+export default function TaskForm({ onTaskCreated, showModal, onClose }) {
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
@@ -72,7 +72,7 @@ export default function TaskForm({ onTaskCreated }) {
         category: 'Allmänt',
         subtasks: []
       })
-      setIsOpen(false)
+      onClose()
       toast.success('Uppgift skapad!')
     } catch (error) {
       console.error('Error creating task:', error)
@@ -82,47 +82,35 @@ export default function TaskForm({ onTaskCreated }) {
     }
   }
 
-  if (!isOpen) {
-    return (
-      <motion.button
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        onClick={() => setIsOpen(true)}
-        className="w-full task-card hover:shadow-lg transition-all cursor-pointer group"
+  if (!showModal) return null
+
+  return createPortal(
+    <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center p-4 overflow-y-auto" style={{ zIndex: 99999 }}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="bg-white rounded-xl shadow-2xl max-w-2xl w-full my-4 sm:my-8"
       >
-        <div className="flex items-center justify-center gap-2 text-gray-500 group-hover:text-blue-600">
-          <Plus className="w-5 h-5" />
-          <span className="font-medium">Skapa uppgift manuellt</span>
-        </div>
-      </motion.button>
-    )
-  }
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="task-card"
-    >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg">
-            <Plus className="w-5 h-5 text-white" />
+        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg">
+              <Plus className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">Ny uppgift</h3>
+              <p className="text-sm text-gray-500">Fyll i formuläret nedan</p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-semibold text-gray-900">Ny uppgift</h3>
-            <p className="text-sm text-gray-500">Fyll i formuläret nedan</p>
-          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
         </div>
-        <button
-          onClick={() => setIsOpen(false)}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <X className="w-5 h-5 text-gray-500" />
-        </button>
-      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
         {/* Title */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -275,6 +263,14 @@ export default function TaskForm({ onTaskCreated }) {
         {/* Submit Buttons */}
         <div className="flex gap-3 pt-2">
           <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="px-6 py-2 border border-gray-300 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors font-medium disabled:opacity-50"
+          >
+            Avbryt
+          </button>
+          <button
             type="submit"
             disabled={loading || !formData.title.trim()}
             className="flex-1 btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
@@ -291,16 +287,10 @@ export default function TaskForm({ onTaskCreated }) {
               </>
             )}
           </button>
-          <button
-            type="button"
-            onClick={() => setIsOpen(false)}
-            disabled={loading}
-            className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-          >
-            Avbryt
-          </button>
         </div>
       </form>
-    </motion.div>
+      </motion.div>
+    </div>,
+    document.body
   )
 }

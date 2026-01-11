@@ -10,9 +10,10 @@ export default function ImportExport({
   notes,
   onImportTasks,
   onImportNotes,
-  userId
+  userId,
+  showModal,
+  onClose
 }) {
-  const [showModal, setShowModal] = useState(false)
   const [importing, setImporting] = useState(false)
   const fileInputRef = useRef(null)
 
@@ -145,7 +146,7 @@ export default function ImportExport({
         { duration: 5000 }
       )
 
-      setShowModal(false)
+      onClose()
     } catch (error) {
       console.error('Import error:', error)
       toast.error(`Fel vid import: ${error.message}`)
@@ -158,19 +159,9 @@ export default function ImportExport({
     }
   }
 
-  return (
-    <>
-      <button
-        onClick={() => setShowModal(true)}
-        className="flex items-center gap-2 px-3 py-2 lg:px-4 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
-        title="Import & Export"
-      >
-        <FileJson className="w-4 h-4" />
-        <span className="hidden sm:inline">Backup</span>
-      </button>
+  if (!showModal) return null
 
-      {/* Modal - Rendered via Portal */}
-      {showModal && createPortal(
+  return createPortal(
         <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center p-4 overflow-y-auto" style={{ zIndex: 99999 }}>
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -332,7 +323,7 @@ export default function ImportExport({
 
               <div className="p-3 border-t border-gray-200 bg-gray-50 flex justify-end">
                 <button
-                  onClick={() => setShowModal(false)}
+                  onClick={onClose}
                   className="px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors font-medium text-sm"
                 >
                   Stäng
@@ -341,7 +332,5 @@ export default function ImportExport({
           </motion.div>
         </div>,
         document.body
-      )}
-    </>
   )
 }

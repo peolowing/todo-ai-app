@@ -8,7 +8,7 @@ import AITaskCreator from './components/AITaskCreator'
 import TaskForm from './components/TaskForm'
 import TaskCard from './components/TaskCard'
 import Notes from './components/Notes'
-import ImportExport from './components/ImportExport'
+import Settings from './components/Settings'
 import { Toaster } from 'react-hot-toast'
 import {
   LogOut,
@@ -19,7 +19,9 @@ import {
   Circle,
   Loader2,
   FileText,
-  CheckSquare
+  CheckSquare,
+  Sparkles,
+  Plus
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { sv } from 'date-fns/locale'
@@ -31,6 +33,8 @@ export default function App() {
   const [filter, setFilter] = useState('all') // all, active, completed
   const [selectedList, setSelectedList] = useState(null)
   const [selectedCategory, setSelectedCategory] = useState('all') // Kategorifilter för uppgifter
+  const [showAIModal, setShowAIModal] = useState(false)
+  const [showTaskFormModal, setShowTaskFormModal] = useState(false)
 
   const {
     tasks,
@@ -149,7 +153,7 @@ export default function App() {
             </div>
 
             <div className="flex items-center gap-2">
-              <ImportExport
+              <Settings
                 tasks={tasks}
                 notes={notes}
                 onImportTasks={createTask}
@@ -171,7 +175,7 @@ export default function App() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Tab Navigation */}
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
           <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 border border-gray-100 inline-flex gap-2">
             <button
               onClick={() => setActiveTab('tasks')}
@@ -196,6 +200,28 @@ export default function App() {
               Anteckningar
             </button>
           </div>
+
+          {/* Create Task Buttons - Only show on tasks tab */}
+          {activeTab === 'tasks' && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowAIModal(true)}
+                className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all text-sm font-medium"
+                title="AI Uppgiftsskapare"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span className="hidden sm:inline">AI Uppgifter</span>
+              </button>
+              <button
+                onClick={() => setShowTaskFormModal(true)}
+                className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all text-sm font-medium"
+                title="Ny uppgift"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Ny uppgift</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {activeTab === 'notes' ? (
@@ -330,11 +356,7 @@ export default function App() {
           </aside>
 
           {/* Main Content */}
-          <main className="lg:col-span-3 space-y-6">
-            <AITaskCreator onTasksCreated={handleTasksCreated} />
-
-            <TaskForm onTaskCreated={handleTaskCreated} />
-
+          <main className="lg:col-span-3">
             <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                 <Calendar className="w-6 h-6 text-blue-600" />
@@ -378,6 +400,18 @@ export default function App() {
         </div>
         )}
       </div>
+
+      {/* Modals */}
+      <AITaskCreator
+        onTasksCreated={handleTasksCreated}
+        showModal={showAIModal}
+        onClose={() => setShowAIModal(false)}
+      />
+      <TaskForm
+        onTaskCreated={handleTaskCreated}
+        showModal={showTaskFormModal}
+        onClose={() => setShowTaskFormModal(false)}
+      />
     </div>
   )
 }
