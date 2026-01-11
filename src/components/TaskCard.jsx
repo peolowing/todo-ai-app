@@ -97,13 +97,29 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
                 </h3>
               </div>
             </div>
-            <button
-              onClick={() => setShowDetails(false)}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
-              title="Stäng detaljer"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => { setShowDetails(false); setIsEditing(true); }}
+                className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                title="Redigera"
+              >
+                <Edit2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => onDelete(task.id)}
+                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                title="Ta bort"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setShowDetails(false)}
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+                title="Stäng detaljer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {task.description && (
@@ -181,23 +197,6 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
               </div>
             </div>
           )}
-
-          <div className="flex gap-2 pt-4 border-t">
-            <button
-              onClick={() => { setShowDetails(false); setIsEditing(true); }}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-              <Edit2 className="w-4 h-4" />
-              Redigera
-            </button>
-            <button
-              onClick={() => onDelete(task.id)}
-              className="px-4 py-2 text-red-600 hover:bg-red-50 border border-red-200 rounded-lg transition-colors flex items-center gap-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              Ta bort
-            </button>
-          </div>
         </div>
       </motion.div>
     )
