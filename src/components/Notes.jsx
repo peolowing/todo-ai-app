@@ -1,33 +1,89 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Edit2, Trash2, Save, X, FileText, Search, Sparkles, Loader2 } from 'lucide-react'
+import { Plus, Edit2, Trash2, Save, X, FileText, Search, Sparkles, Loader2, CheckSquare, StickyNote, Image as ImageIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { sv } from 'date-fns/locale'
 import toast from 'react-hot-toast'
-import { parseNotesFromText } from '../lib/openai'
+import { structureNotesOnly, extractTasksOnly, extractTextFromImage } from '../lib/openai'
 
 export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote, onCreateTask }) {
   const [selectedNote, setSelectedNote] = useState(null)
   const [isCreating, setIsCreating] = useState(false)
-  const [editData, setEditData] = useState({ title: '', content: '' })
+  const [editData, setEditData] = useState({ title: '', content: '', category: 'Allmänt' })
   const [searchQuery, setSearchQuery] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
+  const [showTaskPreview, setShowTaskPreview] = useState(false)
+  const [previewTasks, setPreviewTasks] = useState([])
+  const [selectedCategory, setSelectedCategory] = useState('Alla') // 'Alla' = visa alla kategorier
+  const fileInputRef = useRef(null)
 
-  const filteredNotes = notes.filter(note =>
+  // Filtrera först baserat på sökning
+  let filteredNotes = notes.filter(note =>
     note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     note.content?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  // Filtrera sedan baserat på vald kategori
+  if (selectedCategory !== 'Alla') {
+    filteredNotes = filteredNotes.filter(note =>
+      (note.category || 'Allmänt') === selectedCategory
+    )
+  }
+
+  // Hämta alla kategorier från alla anteckningar (inte bara filtrerade)
+  const allCategories = ['Alla', ...new Set(notes.map(note => note.category || 'Allmänt'))].sort((a, b) => {
+    if (a === 'Alla') return -1
+    if (b === 'Alla') return 1
+    return a.localeCompare(b)
+  })
+
+  // Gruppera filtrerade anteckningar per kategori (för att visa i listan)
+  const notesByCategory = filteredNotes.reduce((acc, note) => {
+    const category = note.category || 'Allmänt'
+    if (!acc[category]) {
+      acc[category] = []
+    }
+    acc[category].push(note)
+    return acc
+  }, {})
+
+  // Sortera kategorier alfabetiskt
+  const categories = Object.keys(notesByCategory).sort()
+
+  // Färger för kategorier (roterande färgschema)
+  const categoryColors = [
+    'bg-pink-500',
+    'bg-purple-500',
+    'bg-blue-500',
+    'bg-cyan-500',
+    'bg-orange-500',
+    'bg-gray-500',
+    'bg-green-500',
+    'bg-red-500',
+    'bg-yellow-500',
+    'bg-indigo-500'
+  ]
+
+  const getCategoryColor = (category) => {
+    if (category === 'Alla') return 'bg-gray-700'
+    const index = allCategories.indexOf(category) - 1 // -1 för att hoppa över "Alla"
+    return categoryColors[index % categoryColors.length]
+  }
+
   function handleCreateNew() {
     setIsCreating(true)
     setSelectedNote(null)
-    setEditData({ title: '', content: '' })
+    setEditData({ title: '', content: '', category: selectedCategory || 'Allmänt' })
   }
 
   function handleSelectNote(note) {
     setSelectedNote(note)
     setIsCreating(false)
-    setEditData({ title: note.title, content: note.content || '' })
+    setEditData({
+      title: note.title,
+      content: note.content || '',
+      category: note.category || 'Allmänt'
+    })
   }
 
   async function handleSave() {
@@ -77,7 +133,8 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
     }
   }
 
-  async function handleAIGenerate() {
+  // Strukturera anteckningar
+  async function handleStructureNotes() {
     if (!editData.content.trim()) {
       toast.error('Skriv något i textfältet först')
       return
@@ -85,41 +142,20 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
 
     setAiLoading(true)
     try {
-      const result = await parseNotesFromText(editData.content)
-      const { notes: aiNotes, tasks: aiTasks } = result
+      const aiNotes = await structureNotesOnly(editData.content)
 
-      let notesCount = 0
-      let tasksCount = 0
+      if (!aiNotes || aiNotes.length === 0) {
+        toast.error('Kunde inte strukturera texten')
+        setAiLoading(false)
+        return
+      }
 
       // Skapa alla anteckningar
-      if (aiNotes && aiNotes.length > 0) {
-        for (const note of aiNotes) {
-          await onCreateNote({
-            title: note.title,
-            content: note.content || ''
-          })
-        }
-        notesCount = aiNotes.length
-      }
-
-      // Skapa alla uppgifter
-      if (aiTasks && aiTasks.length > 0) {
-        for (const task of aiTasks) {
-          await onCreateTask({
-            title: task.title,
-            description: task.description || '',
-            priority: task.priority || 'medium',
-            due_date: task.dueDate || null,
-            list_name: task.list || null,
-            subtasks: task.subtasks || []
-          })
-        }
-        tasksCount = aiTasks.length
-      }
-
-      if (notesCount === 0 && tasksCount === 0) {
-        toast.error('Kunde inte strukturera texten')
-        return
+      for (const note of aiNotes) {
+        await onCreateNote({
+          title: note.title,
+          content: note.content || ''
+        })
       }
 
       // Rensa formuläret
@@ -127,66 +163,236 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
       setIsCreating(false)
       setSelectedNote(null)
 
-      // Visa sammanfattning
-      const messages = []
-      if (notesCount > 0) messages.push(`${notesCount} anteckning${notesCount > 1 ? 'ar' : ''}`)
-      if (tasksCount > 0) messages.push(`${tasksCount} uppgift${tasksCount > 1 ? 'er' : ''}`)
-
-      toast.success(`✨ Skapade ${messages.join(' och ')} med AI!`, { duration: 4000 })
+      toast.success(`✨ Skapade ${aiNotes.length} anteckning${aiNotes.length > 1 ? 'ar' : ''} med AI!`, { duration: 4000 })
     } catch (error) {
-      console.error('Error generating notes:', error)
-      toast.error(`Fel: ${error.message || 'Kunde inte generera anteckningar'}`)
+      console.error('Error structuring notes:', error)
+      toast.error(`Fel: ${error.message || 'Kunde inte strukturera anteckningar'}`)
     } finally {
       setAiLoading(false)
     }
   }
 
+  // Extrahera uppgifter och visa preview
+  async function handleExtractTasks() {
+    if (!editData.content.trim()) {
+      toast.error('Skriv något i textfältet först')
+      return
+    }
+
+    setAiLoading(true)
+    try {
+      const aiTasks = await extractTasksOnly(editData.content)
+
+      if (!aiTasks || aiTasks.length === 0) {
+        toast.error('Hittade inga uppgifter i texten')
+        setAiLoading(false)
+        return
+      }
+
+      // Visa preview modal
+      setPreviewTasks(aiTasks)
+      setShowTaskPreview(true)
+    } catch (error) {
+      console.error('Error extracting tasks:', error)
+      toast.error(`Fel: ${error.message || 'Kunde inte extrahera uppgifter'}`)
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
+  // Godkänn och skapa uppgifter från preview
+  async function handleApproveTasksTask() {
+    try {
+      for (const task of previewTasks) {
+        await onCreateTask({
+          title: task.title,
+          description: task.description || '',
+          priority: task.priority || 'medium',
+          due_date: task.dueDate || null,
+          list_name: task.list || null,
+          subtasks: task.subtasks || []
+        })
+      }
+
+      toast.success(`✨ Skapade ${previewTasks.length} uppgift${previewTasks.length > 1 ? 'er' : ''}!`, { duration: 4000 })
+
+      // Stäng modal och rensa
+      setShowTaskPreview(false)
+      setPreviewTasks([])
+      setEditData({ title: '', content: '' })
+      setIsCreating(false)
+      setSelectedNote(null)
+    } catch (error) {
+      console.error('Error creating tasks:', error)
+      toast.error('Kunde inte skapa uppgifter')
+    }
+  }
+
+  // Avslå uppgifter
+  function handleRejectTasks() {
+    setShowTaskPreview(false)
+    setPreviewTasks([])
+  }
+
+  // Hantera bilduppladdning
+  async function handleImageUpload(event) {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Kontrollera att det är en bild
+    if (!file.type.startsWith('image/')) {
+      toast.error('Vänligen välj en bildfil')
+      return
+    }
+
+    setAiLoading(true)
+    try {
+      // Extrahera text från bilden
+      const extractedText = await extractTextFromImage(file)
+
+      if (!extractedText || extractedText.trim() === '') {
+        toast.error('Kunde inte hitta någon text i bilden')
+        setAiLoading(false)
+        return
+      }
+
+      // Lägg till extraherad text i textfältet
+      setEditData(prev => ({
+        ...prev,
+        content: prev.content ? `${prev.content}\n\n${extractedText}` : extractedText
+      }))
+
+      toast.success('Text extraherad från bild!')
+    } catch (error) {
+      console.error('Error processing image:', error)
+      toast.error(`Fel: ${error.message || 'Kunde inte läsa bilden'}`)
+    } finally {
+      setAiLoading(false)
+      // Rensa file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  // Hantera keyboard shortcuts i textarea
+  function handleTextareaKeyDown(event) {
+    // Ctrl/Cmd + D -> Infoga dagens datum
+    if ((event.metaKey || event.ctrlKey) && event.key === 'd') {
+      event.preventDefault()
+      const today = format(new Date(), 'yyyy-MM-dd (EEEE)', { locale: sv })
+      const textarea = event.target
+      const start = textarea.selectionStart
+      const end = textarea.selectionEnd
+      const text = editData.content
+
+      const newText = text.substring(0, start) + today + text.substring(end)
+      setEditData(prev => ({ ...prev, content: newText }))
+
+      // Placera cursor efter det infogade datumet
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + today.length
+      }, 0)
+    }
+  }
+
   const isEditing = isCreating || (selectedNote && (
     editData.title !== selectedNote.title ||
-    editData.content !== (selectedNote.content || '')
+    editData.content !== (selectedNote.content || '') ||
+    editData.category !== (selectedNote.category || 'Allmänt')
   ))
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-12rem)]">
+    <div className="grid grid-cols-1 lg:grid-cols-[460px_1fr] gap-6 h-[calc(100vh-12rem)]">
       {/* Sidebar - Lista med anteckningar */}
-      <div className="lg:col-span-1 flex flex-col gap-4">
-        <div className="task-card">
-          <button
-            onClick={handleCreateNew}
-            className="w-full btn-primary flex items-center justify-center gap-2"
-          >
-            <Plus className="w-5 h-5" />
-            Ny anteckning
-          </button>
-        </div>
+      <div className="flex flex-col gap-4">
+        <div className="task-card flex-1 overflow-hidden flex flex-row gap-0">
+          {/* Vertikala kategori-flikar till vänster */}
+          <div className="w-36 border-r border-gray-200 py-2 flex flex-col gap-1 overflow-y-auto scrollbar-hide">
+            {allCategories.map(category => {
+              const count = category === 'Alla'
+                ? notes.length
+                : notes.filter(n => (n.category || 'Allmänt') === category).length
 
-        <div className="task-card flex-1 overflow-hidden flex flex-col">
-          <div className="mb-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Sök anteckningar..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+              const isActive = selectedCategory === category
+
+              return (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`relative flex items-center gap-2 px-3 py-2 transition-all group ${
+                    isActive
+                      ? 'bg-blue-50'
+                      : 'hover:bg-gray-50'
+                  }`}
+                >
+                  {/* Färgad indikator till vänster */}
+                  <div className={`absolute left-0 top-0 bottom-0 w-1 ${getCategoryColor(category)} ${
+                    isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'
+                  } transition-opacity`}></div>
+
+                  {/* Färgad prick */}
+                  <div className={`w-3 h-3 flex-shrink-0 ${getCategoryColor(category)} rounded-full ${
+                    isActive ? 'ring-2 ring-blue-300' : ''
+                  }`}></div>
+
+                  {/* Kategorinamn */}
+                  <span className={`text-sm flex-1 text-left truncate ${
+                    isActive ? 'font-semibold text-gray-900' : 'text-gray-700'
+                  }`}>
+                    {category}
+                  </span>
+
+                  {/* Antal */}
+                  <span className={`text-xs flex-shrink-0 ${
+                    isActive ? 'text-gray-600' : 'text-gray-400'
+                  }`}>
+                    {count}
+                  </span>
+                </button>
+              )
+            })}
           </div>
 
-          <div className="flex-1 overflow-y-auto space-y-2">
-            <AnimatePresence>
+          {/* Anteckningslista */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="p-3 border-b border-gray-200">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Sök anteckningar..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
+            <AnimatePresence mode="wait">
               {filteredNotes.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
+                <motion.div
+                  key="empty"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="text-center py-8 text-gray-500"
+                >
                   <FileText className="w-12 h-12 mx-auto mb-2 text-gray-300" />
                   <p className="text-sm">
-                    {searchQuery ? 'Inga anteckningar hittades' : 'Inga anteckningar än'}
+                    {searchQuery
+                      ? 'Inga anteckningar hittades'
+                      : selectedCategory !== 'Alla'
+                      ? `Inga anteckningar i ${selectedCategory}`
+                      : 'Inga anteckningar än'}
                   </p>
-                </div>
+                </motion.div>
               ) : (
                 filteredNotes.map(note => (
                   <motion.div
                     key={note.id}
+                    layout
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
@@ -201,21 +407,27 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                     <p className="text-xs text-gray-500 mt-1">
                       {format(new Date(note.updated_at), 'd MMM yyyy, HH:mm', { locale: sv })}
                     </p>
-                    {note.content && (
-                      <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-                        {note.content}
-                      </p>
-                    )}
                   </motion.div>
                 ))
               )}
             </AnimatePresence>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Huvudinnehåll - Redigeringsområde */}
-      <div className="lg:col-span-2">
+      <div className="relative">
+        {/* Ny anteckning-knapp - diskret i övre högra hörnet */}
+        <button
+          onClick={handleCreateNew}
+          className="absolute top-4 right-4 z-10 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1.5 border border-gray-300"
+          title="Skapa ny anteckning"
+        >
+          <Plus className="w-4 h-4" />
+          Ny
+        </button>
+
         <div className="task-card h-full flex flex-col">
           {!isCreating && !selectedNote ? (
             <div className="flex-1 flex items-center justify-center text-gray-400">
@@ -226,34 +438,90 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
             </div>
           ) : (
             <>
-              <div className="flex items-center justify-between mb-4">
-                <input
-                  type="text"
-                  value={editData.title}
-                  onChange={(e) => setEditData(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="Titel..."
-                  className="flex-1 text-2xl font-bold border-none outline-none focus:ring-0 px-0"
-                />
+              <div className="space-y-3 mb-4">
+                <div className="flex items-center justify-between">
+                  <input
+                    type="text"
+                    value={editData.title}
+                    onChange={(e) => setEditData(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="Titel..."
+                    className="flex-1 text-2xl font-bold border-none outline-none focus:ring-0 px-0"
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="text-sm font-medium text-gray-600">Kategori:</label>
+                  <input
+                    type="text"
+                    value={editData.category}
+                    onChange={(e) => setEditData(prev => ({ ...prev, category: e.target.value }))}
+                    placeholder="Allmänt"
+                    list="categories-list"
+                    className="flex-1 text-sm px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <datalist id="categories-list">
+                    {categories.map(cat => (
+                      <option key={cat} value={cat} />
+                    ))}
+                  </datalist>
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-2 mb-4">
                 <div className="flex gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={aiLoading}
+                    className="px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 text-sm"
+                    title="Läs in bild"
+                  >
+                    {aiLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <ImageIcon className="w-4 h-4" />
+                        Läs bild
+                      </>
+                    )}
+                  </button>
                   {editData.content.trim() && (
-                    <button
-                      onClick={handleAIGenerate}
-                      disabled={aiLoading}
-                      className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
-                      title="Generera med AI"
-                    >
-                      {aiLoading ? (
-                        <>
+                    <>
+                      <button
+                        onClick={handleStructureNotes}
+                        disabled={aiLoading}
+                        className="px-3 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 text-sm"
+                        title="Strukturera anteckningar"
+                      >
+                        {aiLoading ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          Genererar...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-4 h-4" />
-                          Generera med AI
-                        </>
-                      )}
-                    </button>
+                        ) : (
+                          <>
+                            <StickyNote className="w-4 h-4" />
+                            Strukturera
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={handleExtractTasks}
+                        disabled={aiLoading}
+                        className="px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 text-sm"
+                        title="Extrahera uppgifter"
+                      >
+                        {aiLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <CheckSquare className="w-4 h-4" />
+                            Skapa uppgifter
+                          </>
+                        )}
+                      </button>
+                    </>
                   )}
                   {isEditing && (
                     <>
@@ -294,13 +562,112 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
               <textarea
                 value={editData.content}
                 onChange={(e) => setEditData(prev => ({ ...prev, content: e.target.value }))}
-                placeholder={isCreating ? "Skriv eller klistra in din text här...\n\nTips: AI kan:\n• Strukturera långa texter i separata anteckningar\n• Identifiera och extrahera uppgifter automatiskt\n• Känna igen deadlines och prioriteringar\n\nKlicka på 'Generera med AI' när du är klar!" : "Skriv dina anteckningar här..."}
+                onKeyDown={handleTextareaKeyDown}
+                placeholder={isCreating ? "Skriv eller klistra in din text här...\n\nTips:\n• Tryck Ctrl/Cmd + D för att infoga dagens datum\n• AI kan strukturera texter och extrahera uppgifter\n• Ladda upp bilder för att extrahera text" : "Skriv dina anteckningar här...\n\nTryck Ctrl/Cmd + D för att infoga datum"}
                 className="flex-1 w-full border border-gray-200 rounded-lg p-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-sans"
               />
             </>
           )}
         </div>
       </div>
+
+      {/* Task Preview Modal */}
+      <AnimatePresence>
+        {showTaskPreview && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[80vh] overflow-hidden flex flex-col"
+            >
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Förhandsgranska uppgifter</h2>
+                    <p className="text-sm text-gray-600 mt-1">
+                      AI har hittat {previewTasks.length} uppgift{previewTasks.length > 1 ? 'er' : ''} i din text
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleRejectTasks}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                {previewTasks.map((task, index) => (
+                  <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 text-lg">{task.title}</h3>
+                        {task.description && (
+                          <p className="text-gray-600 text-sm mt-1">{task.description}</p>
+                        )}
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        task.priority === 'high' ? 'bg-red-100 text-red-700' :
+                        task.priority === 'low' ? 'bg-gray-100 text-gray-700' :
+                        'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {task.priority === 'high' ? 'Hög' : task.priority === 'low' ? 'Låg' : 'Medium'}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-4 text-sm">
+                      {task.dueDate && (
+                        <div className="flex items-center gap-1 text-gray-600">
+                          <span className="font-medium">Deadline:</span>
+                          <span>{format(new Date(task.dueDate), 'd MMM yyyy', { locale: sv })}</span>
+                        </div>
+                      )}
+                      {task.list && (
+                        <div className="flex items-center gap-1 text-gray-600">
+                          <span className="font-medium">Lista:</span>
+                          <span>{task.list}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {task.subtasks && task.subtasks.length > 0 && (
+                      <div className="mt-3 pl-4 border-l-2 border-gray-300">
+                        <p className="text-xs font-medium text-gray-700 mb-2">Deluppgifter:</p>
+                        <ul className="space-y-1">
+                          {task.subtasks.map((subtask, subIndex) => (
+                            <li key={subIndex} className="text-sm text-gray-600 flex items-center gap-2">
+                              <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>
+                              {subtask}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="p-6 border-t border-gray-200 bg-gray-50 flex gap-3 justify-end">
+                <button
+                  onClick={handleRejectTasks}
+                  className="px-6 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+                >
+                  Avbryt
+                </button>
+                <button
+                  onClick={handleApproveTasksTask}
+                  className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 rounded-lg transition-colors font-medium flex items-center gap-2"
+                >
+                  <CheckSquare className="w-4 h-4" />
+                  Skapa {previewTasks.length} uppgift{previewTasks.length > 1 ? 'er' : ''}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
