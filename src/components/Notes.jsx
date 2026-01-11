@@ -432,17 +432,6 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
 
       {/* Huvudinnehåll - Redigeringsområde - Visa i helskärm på mobil */}
       <div className={`relative ${showMobileEditor ? 'flex lg:block' : 'hidden lg:block'}`}>
-        {/* Tillbakaknapp för mobil - visas endast i mobilvy */}
-        {showMobileEditor && (
-          <button
-            onClick={handleBackToList}
-            className="lg:hidden absolute top-4 left-4 z-10 px-3 py-2 text-sm text-gray-700 hover:text-gray-900 bg-white hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2 border border-gray-300 shadow-sm"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Tillbaka
-          </button>
-        )}
-
         {/* Ny anteckning-knapp - diskret i övre högra hörnet */}
         <button
           onClick={handleCreateNew}
@@ -464,13 +453,25 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
           ) : (
             <>
               <div className="space-y-3 mb-4">
-                <div className="flex items-center justify-between">
+                {/* Tillbakaknapp och rubrik för mobil */}
+                <div className="flex items-center gap-3">
+                  {/* Tillbakaknapp - endast mobil */}
+                  {showMobileEditor && (
+                    <button
+                      onClick={handleBackToList}
+                      className="lg:hidden p-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                      aria-label="Tillbaka till lista"
+                    >
+                      <ArrowLeft className="w-5 h-5" />
+                    </button>
+                  )}
+
                   <input
                     type="text"
                     value={editData.title}
                     onChange={(e) => setEditData(prev => ({ ...prev, title: e.target.value }))}
                     placeholder="Titel..."
-                    className="flex-1 text-2xl font-bold border-none outline-none focus:ring-0 px-0"
+                    className="flex-1 text-lg lg:text-2xl font-bold border-none outline-none focus:ring-0 px-0"
                   />
                 </div>
                 <div className="flex items-center gap-3">
