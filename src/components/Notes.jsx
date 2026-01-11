@@ -367,8 +367,8 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
       {/* Sidebar - Lista med anteckningar - Dölj i mobilvy när editor visas */}
       <div className={`flex flex-col gap-2 lg:gap-4 ${showMobileEditor ? 'hidden lg:flex' : 'flex'}`}>
         <div className="task-card flex-1 overflow-hidden flex flex-row gap-0">
-          {/* Vertikala kategori-flikar till vänster - Dölj i mobil, visa bara när showMobileCategoryView är true */}
-          <div className={`w-36 border-r border-gray-200 py-2 flex-col gap-1 overflow-y-auto scrollbar-hide ${showMobileCategoryView ? 'flex lg:flex' : 'hidden lg:flex'}`}>
+          {/* Vertikala kategori-flikar till vänster - Visa alltid i desktop, i mobil bara när showMobileCategoryView är true */}
+          <div className={`w-36 border-r border-gray-200 py-2 flex-col gap-1 overflow-y-auto scrollbar-hide ${showMobileCategoryView ? 'flex' : 'hidden lg:flex'}`}>
             {allCategories.map(category => {
               const count = category === 'Alla'
                 ? notes.length
@@ -418,18 +418,20 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
           </div>
 
           {/* Anteckningslista */}
-          <div className={`flex-1 flex-col overflow-hidden ${showMobileCategoryView ? 'hidden lg:flex' : 'flex'}`}>
+          <div className="flex-1 flex flex-col overflow-hidden">
             <div className="p-3 border-b border-gray-200">
-              {/* Tillbaka-knapp för mobil */}
-              <div className="flex items-center gap-2 mb-3 lg:hidden">
-                <button
-                  onClick={() => setShowMobileCategoryView(true)}
-                  className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span className="text-sm font-medium">Kategorier</span>
-                </button>
-              </div>
+              {/* Tillbaka-knapp för mobil - visa bara när kategorier är dolda */}
+              {!showMobileCategoryView && (
+                <div className="flex items-center gap-2 mb-3 lg:hidden">
+                  <button
+                    onClick={() => setShowMobileCategoryView(true)}
+                    className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span className="text-sm font-medium">Kategorier</span>
+                  </button>
+                </div>
+              )}
 
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />

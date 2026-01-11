@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from './lib/supabase'
 import { useTasks } from './hooks/useTasks'
@@ -21,7 +21,10 @@ import {
   FileText,
   CheckSquare,
   Sparkles,
-  Plus
+  Plus,
+  ChevronDown,
+  BarChart3,
+  Layers
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { sv } from 'date-fns/locale'
@@ -35,6 +38,8 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState('all') // Kategorifilter för uppgifter
   const [showAIModal, setShowAIModal] = useState(false)
   const [showTaskFormModal, setShowTaskFormModal] = useState(false)
+  const [openMobileMenu, setOpenMobileMenu] = useState(null) // 'overview', 'filter', 'lists', 'categories', or null
+  const mobileMenuRef = useRef(null)
 
   const {
     tasks,
@@ -68,6 +73,20 @@ export default function App() {
 
     return () => subscription.unsubscribe()
   }, [])
+
+  // Close mobile menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+        setOpenMobileMenu(null)
+      }
+    }
+
+    if (openMobileMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [openMobileMenu])
 
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -233,9 +252,186 @@ export default function App() {
             onCreateTask={createTask}
           />
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Sidebar */}
-            <aside className="lg:col-span-1 space-y-6">
+          <>
+            {/* Mobile Menu Bar */}
+            <div className="lg:hidden mb-4" ref={mobileMenuRef}>
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 border border-gray-100 flex gap-2 overflow-x-auto">
+                {/* Översikt Menu */}
+                <div className="relative">
+                  <button
+                    onClick={() => setOpenMobileMenu(openMobileMenu === 'overview' ? null : 'overview')}
+                    className="flex items-center gap-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all text-sm font-medium whitespace-nowrap"
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    Översikt
+                    <ChevronDown className={`w-3 h-3 transition-transform ${openMobileMenu === 'overview' ? 'rotate-180' : ''}`} />
+                  </button>
+                  {openMobileMenu === 'overview' && (
+                    <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-lg border border-gray-200 p-3 z-50 min-w-[200px]">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Totalt</span>
+                          <span className="font-semibold text-gray-900">{stats.total}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Aktiva</span>
+                          <span className="font-semibold text-blue-600">{stats.active}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Klara</span>
+                          <span className="font-semibold text-green-600">{stats.completed}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">Idag</span>
+                          <span className="font-semibold text-purple-600">{stats.today}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Filter Menu */}
+                <div className="relative">
+                  <button
+                    onClick={() => setOpenMobileMenu(openMobileMenu === 'filter' ? null : 'filter')}
+                    className="flex items-center gap-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all text-sm font-medium whitespace-nowrap"
+                  >
+                    <Filter className="w-4 h-4" />
+                    Filter
+                    <ChevronDown className={`w-3 h-3 transition-transform ${openMobileMenu === 'filter' ? 'rotate-180' : ''}`} />
+                  </button>
+                  {openMobileMenu === 'filter' && (
+                    <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 min-w-[160px]">
+                      <button
+                        onClick={() => {
+                          setFilter('all')
+                          setOpenMobileMenu(null)
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-all ${
+                          filter === 'all'
+                            ? 'bg-blue-50 text-blue-700 font-medium'
+                            : 'text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        <ListTodo className="w-4 h-4" />
+                        Alla uppgifter
+                      </button>
+                      <button
+                        onClick={() => {
+                          setFilter('active')
+                          setOpenMobileMenu(null)
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-all ${
+                          filter === 'active'
+                            ? 'bg-blue-50 text-blue-700 font-medium'
+                            : 'text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        <Circle className="w-4 h-4" />
+                        Aktiva
+                      </button>
+                      <button
+                        onClick={() => {
+                          setFilter('completed')
+                          setOpenMobileMenu(null)
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-all ${
+                          filter === 'completed'
+                            ? 'bg-blue-50 text-blue-700 font-medium'
+                            : 'text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        Klara
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Lists Menu */}
+                {lists.length > 0 && (
+                  <div className="relative">
+                    <button
+                      onClick={() => setOpenMobileMenu(openMobileMenu === 'lists' ? null : 'lists')}
+                      className="flex items-center gap-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all text-sm font-medium whitespace-nowrap"
+                    >
+                      <ListTodo className="w-4 h-4" />
+                      Listor
+                      <ChevronDown className={`w-3 h-3 transition-transform ${openMobileMenu === 'lists' ? 'rotate-180' : ''}`} />
+                    </button>
+                    {openMobileMenu === 'lists' && (
+                      <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 min-w-[160px]">
+                        <button
+                          onClick={() => {
+                            setSelectedList(null)
+                            setOpenMobileMenu(null)
+                          }}
+                          className={`w-full text-left px-3 py-2 text-sm transition-all ${
+                            !selectedList
+                              ? 'bg-blue-50 text-blue-700 font-medium'
+                              : 'text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          Alla listor
+                        </button>
+                        {lists.map(list => (
+                          <button
+                            key={list}
+                            onClick={() => {
+                              setSelectedList(list)
+                              setOpenMobileMenu(null)
+                            }}
+                            className={`w-full text-left px-3 py-2 text-sm transition-all ${
+                              selectedList === list
+                                ? 'bg-blue-50 text-blue-700 font-medium'
+                                : 'text-gray-600 hover:bg-gray-50'
+                            }`}
+                          >
+                            {list}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Categories Menu */}
+                <div className="relative">
+                  <button
+                    onClick={() => setOpenMobileMenu(openMobileMenu === 'categories' ? null : 'categories')}
+                    className="flex items-center gap-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all text-sm font-medium whitespace-nowrap"
+                  >
+                    <Layers className="w-4 h-4" />
+                    Kategorier
+                    <ChevronDown className={`w-3 h-3 transition-transform ${openMobileMenu === 'categories' ? 'rotate-180' : ''}`} />
+                  </button>
+                  {openMobileMenu === 'categories' && (
+                    <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 min-w-[160px]">
+                      {categories.map(category => (
+                        <button
+                          key={category}
+                          onClick={() => {
+                            setSelectedCategory(category)
+                            setOpenMobileMenu(null)
+                          }}
+                          className={`w-full text-left px-3 py-2 text-sm transition-all ${
+                            selectedCategory === category
+                              ? 'bg-purple-50 text-purple-700 font-medium'
+                              : 'text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          {category === 'all' ? 'Alla kategorier' : category}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Sidebar - Hidden on mobile */}
+            <aside className="hidden lg:block lg:col-span-1 space-y-6">
             {/* Stats */}
             <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-100">
               <h2 className="font-semibold text-gray-900 mb-4">Översikt</h2>
@@ -398,6 +594,7 @@ export default function App() {
             </div>
           </main>
         </div>
+          </>
         )}
       </div>
 
