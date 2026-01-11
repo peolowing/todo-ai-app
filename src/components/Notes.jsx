@@ -235,7 +235,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                   className="flex-1 text-2xl font-bold border-none outline-none focus:ring-0 px-0"
                 />
                 <div className="flex gap-2">
-                  {isCreating && editData.content.trim() && (
+                  {editData.content.trim() && (
                     <button
                       onClick={handleAIGenerate}
                       disabled={aiLoading}
