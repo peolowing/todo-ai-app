@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Edit2, Trash2, Save, X, FileText, Search, Sparkles, Loader2, CheckSquare, StickyNote, Image as ImageIcon } from 'lucide-react'
+import { Plus, Edit2, Trash2, Save, X, FileText, Search, Sparkles, Loader2, CheckSquare, StickyNote, Image as ImageIcon, ArrowLeft } from 'lucide-react'
 import { format } from 'date-fns'
 import { sv } from 'date-fns/locale'
 import toast from 'react-hot-toast'
@@ -15,6 +15,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
   const [showTaskPreview, setShowTaskPreview] = useState(false)
   const [previewTasks, setPreviewTasks] = useState([])
   const [selectedCategory, setSelectedCategory] = useState('Alla') // 'Alla' = visa alla kategorier
+  const [showMobileEditor, setShowMobileEditor] = useState(false) // För mobilvy
   const fileInputRef = useRef(null)
 
   // Filtrera först baserat på sökning
@@ -74,6 +75,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
     setIsCreating(true)
     setSelectedNote(null)
     setEditData({ title: '', content: '', category: selectedCategory || 'Allmänt' })
+    setShowMobileEditor(true) // Visa editor i mobilvy
   }
 
   function handleSelectNote(note) {
@@ -84,6 +86,13 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
       content: note.content || '',
       category: note.category || 'Allmänt'
     })
+    setShowMobileEditor(true) // Visa editor i mobilvy
+  }
+
+  function handleBackToList() {
+    setShowMobileEditor(false)
+    setSelectedNote(null)
+    setIsCreating(false)
   }
 
   async function handleSave() {
@@ -103,6 +112,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
       setIsCreating(false)
       setSelectedNote(null)
       setEditData({ title: '', content: '' })
+      setShowMobileEditor(false) // Stäng mobilvy
     } catch (error) {
       toast.error('Kunde inte spara anteckning')
     }
@@ -116,6 +126,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
       if (selectedNote?.id === noteId) {
         setSelectedNote(null)
         setEditData({ title: '', content: '' })
+        setShowMobileEditor(false) // Stäng mobilvy
       }
       toast.success('Anteckning borttagen!')
     } catch (error) {
@@ -130,6 +141,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
     } else {
       setSelectedNote(null)
       setEditData({ title: '', content: '' })
+      setShowMobileEditor(false) // Stäng mobilvy om vi avbryter
     }
   }
 
@@ -162,6 +174,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
       setEditData({ title: '', content: '' })
       setIsCreating(false)
       setSelectedNote(null)
+      setShowMobileEditor(false)
 
       toast.success(`✨ Skapade ${aiNotes.length} anteckning${aiNotes.length > 1 ? 'ar' : ''} med AI!`, { duration: 4000 })
     } catch (error) {
@@ -222,6 +235,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
       setEditData({ title: '', content: '' })
       setIsCreating(false)
       setSelectedNote(null)
+      setShowMobileEditor(false)
     } catch (error) {
       console.error('Error creating tasks:', error)
       toast.error('Kunde inte skapa uppgifter')
@@ -304,8 +318,8 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[460px_1fr] gap-6 h-[calc(100vh-12rem)]">
-      {/* Sidebar - Lista med anteckningar */}
-      <div className="flex flex-col gap-4">
+      {/* Sidebar - Lista med anteckningar - Dölj i mobilvy när editor visas */}
+      <div className={`flex flex-col gap-4 ${showMobileEditor ? 'hidden lg:flex' : 'flex'}`}>
         <div className="task-card flex-1 overflow-hidden flex flex-row gap-0">
           {/* Vertikala kategori-flikar till vänster */}
           <div className="w-36 border-r border-gray-200 py-2 flex flex-col gap-1 overflow-y-auto scrollbar-hide">
@@ -416,8 +430,19 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
         </div>
       </div>
 
-      {/* Huvudinnehåll - Redigeringsområde */}
-      <div className="relative">
+      {/* Huvudinnehåll - Redigeringsområde - Visa i helskärm på mobil */}
+      <div className={`relative ${showMobileEditor ? 'flex lg:block' : 'hidden lg:block'}`}>
+        {/* Tillbakaknapp för mobil - visas endast i mobilvy */}
+        {showMobileEditor && (
+          <button
+            onClick={handleBackToList}
+            className="lg:hidden absolute top-4 left-4 z-10 px-3 py-2 text-sm text-gray-700 hover:text-gray-900 bg-white hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2 border border-gray-300 shadow-sm"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Tillbaka
+          </button>
+        )}
+
         {/* Ny anteckning-knapp - diskret i övre högra hörnet */}
         <button
           onClick={handleCreateNew}
