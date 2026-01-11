@@ -12,6 +12,7 @@ export default function TaskForm({ onTaskCreated }) {
     priority: 'medium',
     due_date: '',
     list_name: '',
+    category: 'Allmänt',
     subtasks: []
   })
   const [subtaskInput, setSubtaskInput] = useState('')
@@ -57,6 +58,7 @@ export default function TaskForm({ onTaskCreated }) {
         priority: formData.priority,
         due_date: formData.due_date || null,
         list_name: formData.list_name || null,
+        category: formData.category || 'Allmänt',
         subtasks: formData.subtasks
       })
 
@@ -67,6 +69,7 @@ export default function TaskForm({ onTaskCreated }) {
         priority: 'medium',
         due_date: '',
         list_name: '',
+        category: 'Allmänt',
         subtasks: []
       })
       setIsOpen(false)
@@ -188,20 +191,38 @@ export default function TaskForm({ onTaskCreated }) {
           </div>
         </div>
 
-        {/* List Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Lista/Kategori
-          </label>
-          <input
-            type="text"
-            name="list_name"
-            value={formData.list_name}
-            onChange={handleChange}
-            placeholder="T.ex. Arbete, Privat, Shopping"
-            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled={loading}
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* List Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Lista
+            </label>
+            <input
+              type="text"
+              name="list_name"
+              value={formData.list_name}
+              onChange={handleChange}
+              placeholder="T.ex. Projekt X, Sprint 1"
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={loading}
+            />
+          </div>
+
+          {/* Category */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Kategori
+            </label>
+            <input
+              type="text"
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              placeholder="T.ex. Arbete, Privat, Shopping"
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={loading}
+            />
+          </div>
         </div>
 
         {/* Subtasks */}

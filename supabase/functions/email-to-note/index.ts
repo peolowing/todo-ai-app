@@ -7,44 +7,55 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Parse incoming email from Mailgun
+    console.log('Received request from Mailgun')
+
     const formData = await req.formData()
 
-    // Mailgun sends email data in these fields
-    const sender = formData.get('sender') as string
-    const subject = formData.get('subject') as string
-    const bodyPlain = formData.get('body-plain') as string
-    const bodyHtml = formData.get('body-html') as string
-    const recipient = formData.get('recipient') as string
+    const sender = formData.get('sender')
+    const subject = formData.get('subject')
+    const bodyPlain = formData.get('body-plain')
+    const bodyHtml = formData.get('body-html')
+    const recipient = formData.get('recipient')
 
-    console.log('Received email from:', sender)
+    console.log('Email received')
+    console.log('From:', sender)
     console.log('Subject:', subject)
-    console.log('Recipient:', recipient)
+    console.log('To:', recipient)
 
-    // Extract user ID from recipient email
-    // Format: userid@yourdomain.com or notes-userid@yourdomain.com
-    const userIdMatch = recipient?.match(/notes-([a-f0-9-]+)@/) || recipient?.match(/([a-f0-9-]+)@/)
+    if (!recipient) {
+      throw new Error('No recipient found in email')
+    }
+
+    const userIdMatch = recipient.match(/notes-([a-f0-9-]+)@/)
     const userId = userIdMatch?.[1]
 
     if (!userId) {
-      throw new Error('Could not extract user ID from recipient email')
+      console.error('Could not extract user ID from recipient:', recipient)
+      throw new Error('Invalid recipient email format. Expected: notes-{userId}@domain.com')
     }
 
-    // Create Supabase client with service role
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    console.log('Extracted user ID:', userId)
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing Supabase configuration')
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Use plain text body, fallback to HTML if plain text not available
     const content = bodyPlain || bodyHtml || ''
 
-    // Create note
+    if (!content.trim()) {
+      console.warn('Email has no content')
+    }
+
     const { data, error } = await supabase
       .from('notes')
       .insert({
@@ -59,11 +70,11 @@ serve(async (req) => {
       .single()
 
     if (error) {
-      console.error('Error creating note:', error)
-      throw error
+      console.error('Database error:', error)
+      throw new Error(`Database error: ${error.message}`)
     }
 
-    console.log('Successfully created note:', data.id)
+    console.log('Successfully created note with ID:', data.id)
 
     return new Response(
       JSON.stringify({
@@ -82,7 +93,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message
+        error: error.message || 'Unknown error'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

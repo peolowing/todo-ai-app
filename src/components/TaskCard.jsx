@@ -14,7 +14,8 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
     description: task.description || '',
     priority: task.priority,
     due_date: task.due_date ? task.due_date.split('T')[0] : '',
-    list_name: task.list_name || ''
+    list_name: task.list_name || '',
+    category: task.category || 'Allmänt'
   })
 
   const priorityColors = {
@@ -40,7 +41,8 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
       description: task.description || '',
       priority: task.priority,
       due_date: task.due_date ? task.due_date.split('T')[0] : '',
-      list_name: task.list_name || ''
+      list_name: task.list_name || '',
+      category: task.category || 'Allmänt'
     })
   }
 
@@ -56,7 +58,8 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
         description: editData.description,
         priority: editData.priority,
         due_date: editData.due_date || null,
-        list_name: editData.list_name || null
+        list_name: editData.list_name || null,
+        category: editData.category || 'Allmänt'
       })
       setIsEditing(false)
       toast.success('Uppgift uppdaterad!')
@@ -132,14 +135,25 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
             )}
           </div>
 
-          {task.list_name && (
-            <div>
-              <h4 className="text-sm font-semibold text-gray-700 mb-2">Lista</h4>
-              <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-md font-medium">
-                {task.list_name}
-              </span>
-            </div>
-          )}
+          <div className="flex gap-4">
+            {task.list_name && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">Lista</h4>
+                <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-md font-medium text-sm">
+                  {task.list_name}
+                </span>
+              </div>
+            )}
+
+            {task.category && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">Kategori</h4>
+                <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded-md font-medium text-sm">
+                  {task.category}
+                </span>
+              </div>
+            )}
+          </div>
 
           {task.subtasks && task.subtasks.length > 0 && (
             <div>
@@ -264,14 +278,27 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Lista/Kategori</label>
-            <input
-              type="text"
-              value={editData.list_name}
-              onChange={(e) => handleChange('list_name', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Lista</label>
+              <input
+                type="text"
+                value={editData.list_name}
+                onChange={(e) => handleChange('list_name', e.target.value)}
+                placeholder="T.ex. Projekt X"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Kategori</label>
+              <input
+                type="text"
+                value={editData.category}
+                onChange={(e) => handleChange('category', e.target.value)}
+                placeholder="T.ex. Arbete, Privat"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
           </div>
         </div>
       </motion.div>
@@ -318,6 +345,12 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
               )}
 
               <div className="flex flex-wrap gap-2 mt-3">
+                {task.category && (
+                  <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-md font-medium">
+                    {task.category}
+                  </span>
+                )}
+
                 {task.list_name && (
                   <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-md font-medium">
                     {task.list_name}
