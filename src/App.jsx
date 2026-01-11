@@ -8,6 +8,7 @@ import AITaskCreator from './components/AITaskCreator'
 import TaskForm from './components/TaskForm'
 import TaskCard from './components/TaskCard'
 import Notes from './components/Notes'
+import ImportExport from './components/ImportExport'
 import { Toaster } from 'react-hot-toast'
 import {
   LogOut,
@@ -144,13 +145,23 @@ export default function App() {
               </div>
             </div>
 
-            <button
-              onClick={handleSignOut}
-              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
-            >
-              <LogOut className="w-4 h-4" />
-              Logga ut
-            </button>
+            <div className="flex items-center gap-2">
+              <ImportExport
+                tasks={tasks}
+                notes={notes}
+                onImportTasks={createTask}
+                onImportNotes={createNote}
+                userId={user?.id}
+              />
+
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
+              >
+                <LogOut className="w-4 h-4" />
+                Logga ut
+              </button>
+            </div>
           </div>
         </div>
       </header>

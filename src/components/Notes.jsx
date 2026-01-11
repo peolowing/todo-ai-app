@@ -476,7 +476,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
       </div>
 
       {/* Huvudinnehåll - Redigeringsområde - Visa i helskärm på mobil */}
-      <div className={`relative ${showMobileEditor ? 'flex lg:block' : 'hidden lg:block'}`}>
+      <div className={`relative ${showMobileEditor ? 'flex lg:block w-full' : 'hidden lg:block'}`}>
         {/* Knappar i övre högra hörnet - Dölj på mobil för att inte överlappa innehåll */}
         <div className="hidden lg:flex absolute top-4 right-4 z-10 gap-2">
           {/* Spara och Avbryt-knappar (när editing) */}
@@ -618,7 +618,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
           )}
         </div>
 
-        <div className="task-card h-full flex flex-col">
+        <div className="task-card h-full flex flex-col w-full">
           {!isCreating && !selectedNote ? (
             <div className="flex-1 flex items-center justify-center text-gray-400">
               <div className="text-center">
