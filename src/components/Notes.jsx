@@ -446,8 +446,8 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
 
       {/* Huvudinnehåll - Redigeringsområde - Visa i helskärm på mobil */}
       <div className={`relative ${showMobileEditor ? 'flex lg:block' : 'hidden lg:block'}`}>
-        {/* Knappar i övre högra hörnet */}
-        <div className="absolute top-4 right-4 z-10 flex gap-2">
+        {/* Knappar i övre högra hörnet - Dölj på mobil för att inte överlappa innehåll */}
+        <div className="hidden lg:flex absolute top-4 right-4 z-10 gap-2">
           {/* Spara och Avbryt-knappar (när editing) */}
           {isEditing && (
             <>
@@ -585,7 +585,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
             <>
               <div className="space-y-3 mb-4">
                 {/* Tillbakaknapp och rubrik för mobil */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   {/* Tillbakaknapp - endast mobil */}
                   {showMobileEditor && (
                     <button
@@ -604,6 +604,107 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                     placeholder="Titel..."
                     className="flex-1 text-lg lg:text-2xl font-bold border-none outline-none focus:ring-0 px-0"
                   />
+
+                  {/* Action-knappar för mobil - endast synliga på mobil */}
+                  <div className="lg:hidden flex gap-1">
+                    {isEditing && (
+                      <>
+                        <button
+                          onClick={handleSave}
+                          className="p-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
+                          title="Spara"
+                        >
+                          <Save className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={handleCancel}
+                          className="p-2 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg transition-colors"
+                          title="Avbryt"
+                        >
+                          <X className="w-5 h-5" />
+                        </button>
+                      </>
+                    )}
+                    {selectedNote && !isEditing && (
+                      <button
+                        onClick={() => handleDelete(selectedNote.id)}
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        title="Ta bort"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    )}
+                    {editData.content.trim() && (
+                      <div className="relative" ref={aiDropdownRef}>
+                        <button
+                          onClick={() => setShowAIDropdown(!showAIDropdown)}
+                          disabled={aiLoading}
+                          className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 rounded-lg transition-colors disabled:opacity-50"
+                          title="AI-funktioner"
+                        >
+                          {aiLoading ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                          ) : (
+                            <Sparkles className="w-5 h-5" />
+                          )}
+                        </button>
+
+                        {/* Dropdown meny för mobil */}
+                        <AnimatePresence>
+                          {showAIDropdown && !aiLoading && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -10 }}
+                              className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50"
+                            >
+                              <button
+                                onClick={() => {
+                                  fileInputRef.current?.click()
+                                  setShowAIDropdown(false)
+                                }}
+                                className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors border-b border-gray-100"
+                              >
+                                <ImageIcon className="w-4 h-4 text-green-500" />
+                                <div>
+                                  <div className="text-sm font-medium text-gray-900">Läs bild</div>
+                                  <div className="text-xs text-gray-500">Extrahera text från bild</div>
+                                </div>
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  handleStructureNotes()
+                                  setShowAIDropdown(false)
+                                }}
+                                className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors border-b border-gray-100"
+                              >
+                                <StickyNote className="w-4 h-4 text-blue-500" />
+                                <div>
+                                  <div className="text-sm font-medium text-gray-900">Strukturera</div>
+                                  <div className="text-xs text-gray-500">Dela upp i anteckningar</div>
+                                </div>
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  handleExtractTasks()
+                                  setShowAIDropdown(false)
+                                }}
+                                className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition-colors"
+                              >
+                                <CheckSquare className="w-4 h-4 text-purple-500" />
+                                <div>
+                                  <div className="text-sm font-medium text-gray-900">Skapa uppgifter</div>
+                                  <div className="text-xs text-gray-500">Extrahera till-do items</div>
+                                </div>
+                              </button>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <label className="text-sm font-medium text-gray-600">Kategori:</label>
