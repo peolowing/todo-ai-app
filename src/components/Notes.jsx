@@ -6,7 +6,7 @@ import { sv } from 'date-fns/locale'
 import toast from 'react-hot-toast'
 import { structureNotesOnly, extractTasksOnly, extractTextFromImage, processCustomPrompt } from '../lib/openai'
 
-export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote, onCreateTask }) {
+export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote, onCreateTask, triggerCreate }) {
   const [selectedNote, setSelectedNote] = useState(null)
   const [isCreating, setIsCreating] = useState(false)
   const [editData, setEditData] = useState({ title: '', content: '', category: 'Allmänt' })
@@ -24,6 +24,13 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
   const fileInputRef = useRef(null)
   const aiDropdownRef = useRef(null)
   const editorRef = useRef(null)
+
+  // Listen for create trigger from parent
+  useEffect(() => {
+    if (triggerCreate) {
+      handleCreateNew()
+    }
+  }, [triggerCreate])
 
   // Stäng AI-dropdown när man klickar utanför
   useEffect(() => {
@@ -447,9 +454,9 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
   ))
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[460px_1fr] gap-2 lg:gap-6 h-[calc(100vh-12rem)]">
+    <div className="grid grid-cols-1 lg:grid-cols-[460px_1fr] gap-2 lg:gap-4 h-[calc(100vh-10rem)]">
       {/* Sidebar - Lista med anteckningar - Dölj i mobilvy när editor visas */}
-      <div className={`flex flex-col gap-2 lg:gap-4 ${showMobileEditor ? 'hidden lg:flex' : 'flex'}`}>
+      <div className={`flex flex-col gap-2 ${showMobileEditor ? 'hidden lg:flex' : 'flex'}`}>
         <div className="task-card flex-1 overflow-hidden flex flex-row gap-0">
           {/* Vertikala kategori-flikar till vänster - Visa alltid i desktop, i mobil bara när showMobileCategoryView är true */}
           <div className={`w-36 border-r border-gray-200 py-2 flex-col gap-1 overflow-y-auto scrollbar-hide ${showMobileCategoryView ? 'flex' : 'hidden lg:flex'}`}>
@@ -610,16 +617,6 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
               <Trash2 className="w-5 h-5" />
             </button>
           )}
-
-          {/* Ny anteckning-knapp */}
-          <button
-            onClick={handleCreateNew}
-            className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1.5 border border-gray-300"
-            title="Skapa ny anteckning"
-          >
-            <Plus className="w-4 h-4" />
-            Ny
-          </button>
 
           {/* AI Dropdown */}
           {editData.content.trim() && (

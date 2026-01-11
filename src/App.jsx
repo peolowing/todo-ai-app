@@ -39,6 +39,7 @@ export default function App() {
   const [showAIModal, setShowAIModal] = useState(false)
   const [showTaskFormModal, setShowTaskFormModal] = useState(false)
   const [openMobileMenu, setOpenMobileMenu] = useState(null) // 'overview', 'filter', 'lists', 'categories', or null
+  const [triggerNoteCreate, setTriggerNoteCreate] = useState(0) // Trigger för att skapa ny anteckning
   const mobileMenuRef = useRef(null)
 
   const {
@@ -192,9 +193,9 @@ export default function App() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {/* Tab Navigation */}
-        <div className="mb-6 flex items-center justify-between gap-4 flex-wrap">
+        <div className="mb-4 flex items-center justify-between gap-4 flex-wrap">
           <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 border border-gray-100 inline-flex gap-2">
             <button
               onClick={() => setActiveTab('tasks')}
@@ -241,6 +242,20 @@ export default function App() {
               </button>
             </div>
           )}
+
+          {/* Create Note Button - Only show on notes tab */}
+          {activeTab === 'notes' && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setTriggerNoteCreate(prev => prev + 1)}
+                className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all text-sm font-medium"
+                title="Ny anteckning"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Ny anteckning</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {activeTab === 'notes' ? (
@@ -250,6 +265,7 @@ export default function App() {
             onUpdateNote={updateNote}
             onDeleteNote={deleteNote}
             onCreateTask={createTask}
+            triggerCreate={triggerNoteCreate}
           />
         ) : (
           <>
@@ -429,13 +445,13 @@ export default function App() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             {/* Sidebar - Hidden on mobile */}
-            <aside className="hidden lg:block lg:col-span-1 space-y-6">
+            <aside className="hidden lg:block lg:col-span-1 space-y-4">
             {/* Stats */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-100">
-              <h2 className="font-semibold text-gray-900 mb-4">Översikt</h2>
-              <div className="space-y-3">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gray-100">
+              <h2 className="font-semibold text-gray-900 mb-3">Översikt</h2>
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Totalt</span>
                   <span className="font-semibold text-gray-900">{stats.total}</span>
@@ -456,12 +472,12 @@ export default function App() {
             </div>
 
             {/* Filters */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-100">
-              <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gray-100">
+              <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                 <Filter className="w-4 h-4" />
                 Filter
               </h2>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <button
                   onClick={() => setFilter('all')}
                   className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${
@@ -500,9 +516,9 @@ export default function App() {
 
             {/* Lists */}
             {lists.length > 0 && (
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-100">
-                <h2 className="font-semibold text-gray-900 mb-4">Listor</h2>
-                <div className="space-y-2">
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gray-100">
+                <h2 className="font-semibold text-gray-900 mb-3">Listor</h2>
+                <div className="space-y-1">
                   <button
                     onClick={() => setSelectedList(null)}
                     className={`w-full text-left px-3 py-2 rounded-lg transition-all ${
@@ -531,9 +547,9 @@ export default function App() {
             )}
 
             {/* Category Filter */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-100">
-              <h2 className="font-semibold text-gray-900 mb-4">Kategorier</h2>
-              <div className="space-y-2">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gray-100">
+              <h2 className="font-semibold text-gray-900 mb-3">Kategorier</h2>
+              <div className="space-y-1">
                 {categories.map(category => (
                   <button
                     key={category}
