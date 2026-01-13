@@ -272,39 +272,23 @@ export default function App() {
             {/* Mobile Menu Bar */}
             <div className="lg:hidden mb-4" ref={mobileMenuRef}>
               <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 border border-gray-100 flex gap-2 overflow-x-auto">
-                {/* Översikt Menu */}
-                <div className="relative">
-                  <button
-                    onClick={() => setOpenMobileMenu(openMobileMenu === 'overview' ? null : 'overview')}
-                    className="flex items-center gap-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all text-sm font-medium whitespace-nowrap"
-                  >
-                    <BarChart3 className="w-4 h-4" />
-                    Översikt
-                    <ChevronDown className={`w-3 h-3 transition-transform ${openMobileMenu === 'overview' ? 'rotate-180' : ''}`} />
-                  </button>
-                  {openMobileMenu === 'overview' && (
-                    <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-lg border border-gray-200 p-3 z-50 min-w-[200px]">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">Totalt</span>
-                          <span className="font-semibold text-gray-900">{stats.total}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">Aktiva</span>
-                          <span className="font-semibold text-blue-600">{stats.active}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">Klara</span>
-                          <span className="font-semibold text-green-600">{stats.completed}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">Idag</span>
-                          <span className="font-semibold text-purple-600">{stats.today}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                {/* AI Uppgifter Button */}
+                <button
+                  onClick={() => setShowAIModal(true)}
+                  className="flex items-center gap-1 px-3 py-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all text-sm font-medium whitespace-nowrap"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  AI
+                </button>
+
+                {/* Ny uppgift Button */}
+                <button
+                  onClick={() => setShowTaskFormModal(true)}
+                  className="flex items-center gap-1 px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all text-sm font-medium whitespace-nowrap"
+                >
+                  <Plus className="w-4 h-4" />
+                  Ny
+                </button>
 
                 {/* Filter Menu */}
                 <div className="relative">
@@ -317,7 +301,7 @@ export default function App() {
                     <ChevronDown className={`w-3 h-3 transition-transform ${openMobileMenu === 'filter' ? 'rotate-180' : ''}`} />
                   </button>
                   {openMobileMenu === 'filter' && (
-                    <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 min-w-[160px]">
+                    <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px]" style={{ zIndex: 1000 }}>
                       <button
                         onClick={() => {
                           setFilter('all')
@@ -376,7 +360,7 @@ export default function App() {
                       <ChevronDown className={`w-3 h-3 transition-transform ${openMobileMenu === 'lists' ? 'rotate-180' : ''}`} />
                     </button>
                     {openMobileMenu === 'lists' && (
-                      <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 min-w-[160px]">
+                      <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px]" style={{ zIndex: 1000 }}>
                         <button
                           onClick={() => {
                             setSelectedList(null)
@@ -422,7 +406,7 @@ export default function App() {
                     <ChevronDown className={`w-3 h-3 transition-transform ${openMobileMenu === 'categories' ? 'rotate-180' : ''}`} />
                   </button>
                   {openMobileMenu === 'categories' && (
-                    <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 min-w-[160px]">
+                    <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px]" style={{ zIndex: 1000 }}>
                       {categories.map(category => (
                         <button
                           key={category}
