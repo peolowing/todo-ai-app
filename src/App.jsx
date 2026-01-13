@@ -435,6 +435,26 @@ export default function App() {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             {/* Sidebar - Hidden on mobile */}
             <aside className="hidden lg:block lg:col-span-1 space-y-4">
+            {/* Category Filter */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gray-100">
+              <h2 className="font-semibold text-gray-900 mb-3">Kategorier</h2>
+              <div className="space-y-1">
+                {categories.map(category => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`w-full text-left px-3 py-2 rounded-lg transition-all ${
+                      selectedCategory === category
+                        ? 'bg-purple-50 text-purple-700 font-medium'
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    {category === 'all' ? 'Alla kategorier' : category}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Stats */}
             <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gray-100">
               <h2 className="font-semibold text-gray-900 mb-3">Översikt</h2>
@@ -532,26 +552,6 @@ export default function App() {
                 </div>
               </div>
             )}
-
-            {/* Category Filter */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gray-100">
-              <h2 className="font-semibold text-gray-900 mb-3">Kategorier</h2>
-              <div className="space-y-1">
-                {categories.map(category => (
-                  <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className={`w-full text-left px-3 py-2 rounded-lg transition-all ${
-                      selectedCategory === category
-                        ? 'bg-purple-50 text-purple-700 font-medium'
-                        : 'text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    {category === 'all' ? 'Alla kategorier' : category}
-                  </button>
-                ))}
-              </div>
-            </div>
           </aside>
 
           {/* Main Content */}
@@ -589,6 +589,7 @@ export default function App() {
                         onDelete={deleteTask}
                         onToggleSubtask={toggleSubtask}
                         onUpdate={updateTask}
+                        categories={categories}
                       />
                     ))}
                   </AnimatePresence>

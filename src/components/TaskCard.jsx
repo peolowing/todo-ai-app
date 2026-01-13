@@ -5,10 +5,11 @@ import { format } from 'date-fns'
 import { sv } from 'date-fns/locale'
 import toast from 'react-hot-toast'
 
-export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, onUpdate }) {
+export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, onUpdate, categories = [] }) {
   const [expanded, setExpanded] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
+  const [showCustomCategory, setShowCustomCategory] = useState(false)
   const [editData, setEditData] = useState({
     title: task.title,
     description: task.description || '',
@@ -36,6 +37,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
 
   function handleCancel() {
     setIsEditing(false)
+    setShowCustomCategory(false)
     setEditData({
       title: task.title,
       description: task.description || '',
@@ -290,13 +292,46 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Kategori</label>
-              <input
-                type="text"
-                value={editData.category}
-                onChange={(e) => handleChange('category', e.target.value)}
-                placeholder="T.ex. Arbete, Privat"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              {!showCustomCategory ? (
+                <select
+                  value={editData.category}
+                  onChange={(e) => {
+                    if (e.target.value === '__custom__') {
+                      setShowCustomCategory(true)
+                      handleChange('category', '')
+                    } else {
+                      handleChange('category', e.target.value)
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {categories.filter(cat => cat !== 'all').map(category => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                  <option value="__custom__">+ Ny kategori</option>
+                </select>
+              ) : (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={editData.category}
+                    onChange={(e) => handleChange('category', e.target.value)}
+                    placeholder="Skriv ny kategori"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomCategory(false)}
+                    className="px-3 py-2 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg transition-colors"
+                    title="Tillbaka till dropdown"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
