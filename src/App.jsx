@@ -273,8 +273,8 @@ export default function App() {
         ) : (
           <>
             {/* Mobile Menu Bar */}
-            <div className="lg:hidden mb-40" ref={mobileMenuRef}>
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 border border-gray-100 flex gap-2 overflow-x-auto" style={{ overflowY: 'visible' }}>
+            <div className="lg:hidden mb-4" ref={mobileMenuRef}>
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 border border-gray-100 flex gap-2 overflow-x-auto scrollbar-hide">
                 {/* AI Uppgifter Button */}
                 <button
                   onClick={() => setShowAIModal(true)}
@@ -304,7 +304,7 @@ export default function App() {
                     <ChevronDown className={`w-3 h-3 transition-transform ${openMobileMenu === 'filter' ? 'rotate-180' : ''}`} />
                   </button>
                   {openMobileMenu === 'filter' && (
-                    <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px]" style={{ zIndex: 1000 }}>
+                    <div className="fixed mt-2 left-4 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px]" style={{ zIndex: 1000, top: '180px' }}>
                       <button
                         onClick={() => {
                           setFilter('all')
@@ -363,7 +363,7 @@ export default function App() {
                       <ChevronDown className={`w-3 h-3 transition-transform ${openMobileMenu === 'lists' ? 'rotate-180' : ''}`} />
                     </button>
                     {openMobileMenu === 'lists' && (
-                      <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px]" style={{ zIndex: 1000 }}>
+                      <div className="fixed mt-2 left-4 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px]" style={{ zIndex: 1000, top: '180px' }}>
                         <button
                           onClick={() => {
                             setSelectedList(null)
@@ -409,7 +409,7 @@ export default function App() {
                     <ChevronDown className={`w-3 h-3 transition-transform ${openMobileMenu === 'categories' ? 'rotate-180' : ''}`} />
                   </button>
                   {openMobileMenu === 'categories' && (
-                    <div className="absolute top-full mt-2 left-0 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px]" style={{ zIndex: 1000 }}>
+                    <div className="fixed mt-2 left-4 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px]" style={{ zIndex: 1000, top: '180px' }}>
                       {categories.map(category => (
                         <button
                           key={category}

@@ -344,22 +344,9 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
               )}
 
               <div className="flex flex-wrap gap-2 mt-3">
-                {task.category && (
-                  <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-md font-medium">
-                    {task.category}
-                  </span>
-                )}
-
                 {task.list_name && (
                   <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-md font-medium">
                     {task.list_name}
-                  </span>
-                )}
-
-                {task.priority && (
-                  <span className={`text-xs px-2 py-1 rounded-md font-medium flex items-center gap-1 border ${priorityColors[task.priority]}`}>
-                    <Flag className="w-3 h-3" />
-                    {priorityLabels[task.priority]}
                   </span>
                 )}
 
