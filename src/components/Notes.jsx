@@ -6,7 +6,7 @@ import { sv } from 'date-fns/locale'
 import toast from 'react-hot-toast'
 import { structureNotesOnly, extractTasksOnly, extractTextFromImage, processCustomPrompt } from '../lib/openai'
 
-export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote, onCreateTask, triggerCreate }) {
+export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote, onCreateTask, triggerCreate, noteToOpen, onNoteOpened }) {
   const [selectedNote, setSelectedNote] = useState(null)
   const [isCreating, setIsCreating] = useState(false)
   const [editData, setEditData] = useState({ title: '', content: '', category: 'Allmänt' })
@@ -193,6 +193,17 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [triggerCreate])
+
+  // Listen for note to open from dashboard
+  useEffect(() => {
+    if (noteToOpen) {
+      handleSelectNote(noteToOpen)
+      if (onNoteOpened) {
+        onNoteOpened()
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [noteToOpen])
 
   function handleSelectNote(note) {
     setSelectedNote(note)

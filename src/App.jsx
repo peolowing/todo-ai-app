@@ -43,6 +43,7 @@ export default function App() {
   const [showTaskFormModal, setShowTaskFormModal] = useState(false)
   const [openMobileMenu, setOpenMobileMenu] = useState(null) // 'overview', 'filter', 'lists', 'categories', or null
   const [triggerNoteCreate, setTriggerNoteCreate] = useState(0) // Trigger för att skapa ny anteckning
+  const [selectedNoteToOpen, setSelectedNoteToOpen] = useState(null) // Anteckning att öppna från dashboard
   const [categoryOrder, setCategoryOrder] = useState(() => {
     const saved = localStorage.getItem('categoryOrder')
     return saved ? JSON.parse(saved) : []
@@ -342,8 +343,8 @@ export default function App() {
               // Optional: scroll to or highlight the task
             }}
             onNoteClick={(note) => {
+              setSelectedNoteToOpen(note)
               setActiveTab('notes')
-              // Optional: open the note in editor
             }}
             onCategoryClick={(category) => {
               setSelectedCategory(category)
@@ -360,6 +361,8 @@ export default function App() {
             onDeleteNote={deleteNote}
             onCreateTask={createTask}
             triggerCreate={triggerNoteCreate}
+            noteToOpen={selectedNoteToOpen}
+            onNoteOpened={() => setSelectedNoteToOpen(null)}
           />
         ) : (
           <>
