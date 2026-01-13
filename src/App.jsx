@@ -33,7 +33,7 @@ export default function App() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('notes') // tasks, notes - Default to notes
-  const [filter, setFilter] = useState('all') // all, active, completed
+  const [filter, setFilter] = useState('active') // all, active, completed - Default to active
   const [selectedList, setSelectedList] = useState(null)
   const [selectedCategory, setSelectedCategory] = useState('all') // Kategorifilter för uppgifter
   const [showAIModal, setShowAIModal] = useState(false)

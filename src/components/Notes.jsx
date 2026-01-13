@@ -25,13 +25,6 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
   const aiDropdownRef = useRef(null)
   const editorRef = useRef(null)
 
-  // Listen for create trigger from parent
-  useEffect(() => {
-    if (triggerCreate) {
-      handleCreateNew()
-    }
-  }, [triggerCreate])
-
   // Stäng AI-dropdown när man klickar utanför
   useEffect(() => {
     function handleClickOutside(event) {
@@ -136,6 +129,14 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
       editorRef.current?.focus()
     }, 100)
   }
+
+  // Listen for create trigger from parent
+  useEffect(() => {
+    if (triggerCreate > 0) {
+      handleCreateNew()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [triggerCreate])
 
   function handleSelectNote(note) {
     setSelectedNote(note)
