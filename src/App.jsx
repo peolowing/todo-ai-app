@@ -84,8 +84,11 @@ export default function App() {
     }
 
     if (openMobileMenu) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
+      // Use setTimeout to ensure the click handler fires first
+      setTimeout(() => {
+        document.addEventListener('click', handleClickOutside)
+      }, 0)
+      return () => document.removeEventListener('click', handleClickOutside)
     }
   }, [openMobileMenu])
 
@@ -221,9 +224,9 @@ export default function App() {
             </button>
           </div>
 
-          {/* Create Task Buttons - Only show on tasks tab */}
+          {/* Create Task Buttons - Only show on tasks tab and desktop */}
           {activeTab === 'tasks' && (
-            <div className="flex gap-2">
+            <div className="hidden lg:flex gap-2">
               <button
                 onClick={() => setShowAIModal(true)}
                 className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all text-sm font-medium"
@@ -243,9 +246,9 @@ export default function App() {
             </div>
           )}
 
-          {/* Create Note Button - Only show on notes tab */}
+          {/* Create Note Button - Only show on notes tab and desktop */}
           {activeTab === 'notes' && (
-            <div className="flex gap-2">
+            <div className="hidden lg:flex gap-2">
               <button
                 onClick={() => setTriggerNoteCreate(prev => prev + 1)}
                 className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all text-sm font-medium"
