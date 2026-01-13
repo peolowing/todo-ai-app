@@ -44,6 +44,7 @@ export default function App() {
   const [openMobileMenu, setOpenMobileMenu] = useState(null) // 'overview', 'filter', 'lists', 'categories', or null
   const [triggerNoteCreate, setTriggerNoteCreate] = useState(0) // Trigger för att skapa ny anteckning
   const [selectedNoteToOpen, setSelectedNoteToOpen] = useState(null) // Anteckning att öppna från dashboard
+  const [selectedTaskToOpen, setSelectedTaskToOpen] = useState(null) // Uppgift att öppna från dashboard
   const [categoryOrder, setCategoryOrder] = useState(() => {
     const saved = localStorage.getItem('categoryOrder')
     return saved ? JSON.parse(saved) : []
@@ -339,8 +340,8 @@ export default function App() {
             tasks={tasks}
             notes={notes}
             onTaskClick={(task) => {
+              setSelectedTaskToOpen(task)
               setActiveTab('tasks')
-              // Optional: scroll to or highlight the task
             }}
             onNoteClick={(note) => {
               setSelectedNoteToOpen(note)
@@ -751,6 +752,8 @@ export default function App() {
                         onToggleSubtask={toggleSubtask}
                         onUpdate={updateTask}
                         categories={categories}
+                        taskToOpen={selectedTaskToOpen}
+                        onTaskOpened={() => setSelectedTaskToOpen(null)}
                       />
                     ))}
                   </AnimatePresence>

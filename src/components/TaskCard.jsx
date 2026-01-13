@@ -1,11 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Check, Trash2, Calendar, Flag, ChevronDown, ChevronUp, Edit2, Save, X } from 'lucide-react'
 import { format } from 'date-fns'
 import { sv } from 'date-fns/locale'
 import toast from 'react-hot-toast'
 
-export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, onUpdate, categories = [] }) {
+export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, onUpdate, categories = [], taskToOpen, onTaskOpened }) {
   const [expanded, setExpanded] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
@@ -30,6 +30,17 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
     medium: 'Medel',
     low: 'Låg'
   }
+
+  // Listen for task to open from dashboard
+  useEffect(() => {
+    if (taskToOpen && taskToOpen.id === task.id) {
+      setExpanded(true)
+      setShowDetails(true)
+      if (onTaskOpened) {
+        onTaskOpened()
+      }
+    }
+  }, [taskToOpen, task.id, onTaskOpened])
 
   function handleEdit() {
     setIsEditing(true)
