@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Edit2, Trash2, Save, X, FileText, Search, Sparkles, Loader2, CheckSquare, StickyNote, Image as ImageIcon, ArrowLeft, ChevronDown, Bold, Italic, Underline, List, ListOrdered, Type } from 'lucide-react'
+import { Plus, Edit2, Trash2, Save, X, FileText, Search, Sparkles, Loader2, CheckSquare, StickyNote, Image as ImageIcon, ArrowLeft, ChevronDown, Bold, Italic, Underline, List, ListOrdered, Type, ChevronUp, ChevronsUpDown } from 'lucide-react'
 import { format } from 'date-fns'
 import { sv } from 'date-fns/locale'
 import toast from 'react-hot-toast'
@@ -21,6 +21,11 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
   const [showCustomPrompt, setShowCustomPrompt] = useState(false) // För egen prompt modal
   const [customPrompt, setCustomPrompt] = useState('') // Egen prompt text
   const [fontSize, setFontSize] = useState('16px') // Font size state
+  const [showCustomCategory, setShowCustomCategory] = useState(false) // För att visa custom category input
+  const [noteCategoryOrder, setNoteCategoryOrder] = useState(() => {
+    const saved = localStorage.getItem('noteCategoryOrder')
+    return saved ? JSON.parse(saved) : []
+  })
   const fileInputRef = useRef(null)
   const aiDropdownRef = useRef(null)
   const editorRef = useRef(null)
@@ -51,9 +56,25 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
   }
 
   // Hämta alla kategorier från alla anteckningar (inte bara filtrerade)
-  const allCategories = ['Alla', ...new Set(notes.map(note => note.category || 'Allmänt'))].sort((a, b) => {
-    if (a === 'Alla') return -1
+  const rawNoteCategories = ['Alla', ...new Set(notes.map(note => note.category || 'Allmänt'))]
+
+  // Sortera kategorier baserat på sparad ordning
+  const allCategories = rawNoteCategories.sort((a, b) => {
+    if (a === 'Alla') return -1 // 'Alla' ska alltid vara först
     if (b === 'Alla') return 1
+
+    const indexA = noteCategoryOrder.indexOf(a)
+    const indexB = noteCategoryOrder.indexOf(b)
+
+    // Om båda finns i ordningen, sortera enligt ordning
+    if (indexA !== -1 && indexB !== -1) {
+      return indexA - indexB
+    }
+    // Om bara A finns i ordningen, sätt den före B
+    if (indexA !== -1) return -1
+    // Om bara B finns i ordningen, sätt den före A
+    if (indexB !== -1) return 1
+    // Annars alfabetisk ordning
     return a.localeCompare(b)
   })
 
@@ -119,10 +140,45 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
     }
   }, [editData.content])
 
+  function moveNoteCategoryUp(category) {
+    if (category === 'Alla') return // Kan inte flytta 'Alla'
+
+    const currentCategories = allCategories.filter(c => c !== 'Alla')
+    const currentIndex = currentCategories.indexOf(category)
+
+    if (currentIndex <= 0) return // Redan högst upp
+
+    const newOrder = [...currentCategories]
+    const temp = newOrder[currentIndex]
+    newOrder[currentIndex] = newOrder[currentIndex - 1]
+    newOrder[currentIndex - 1] = temp
+
+    setNoteCategoryOrder(newOrder)
+    localStorage.setItem('noteCategoryOrder', JSON.stringify(newOrder))
+  }
+
+  function moveNoteCategoryDown(category) {
+    if (category === 'Alla') return // Kan inte flytta 'Alla'
+
+    const currentCategories = allCategories.filter(c => c !== 'Alla')
+    const currentIndex = currentCategories.indexOf(category)
+
+    if (currentIndex >= currentCategories.length - 1) return // Redan längst ner
+
+    const newOrder = [...currentCategories]
+    const temp = newOrder[currentIndex]
+    newOrder[currentIndex] = newOrder[currentIndex + 1]
+    newOrder[currentIndex + 1] = temp
+
+    setNoteCategoryOrder(newOrder)
+    localStorage.setItem('noteCategoryOrder', JSON.stringify(newOrder))
+  }
+
   function handleCreateNew() {
     setIsCreating(true)
     setSelectedNote(null)
-    setEditData({ title: '', content: '', category: selectedCategory || 'Allmänt' })
+    setShowCustomCategory(false)
+    setEditData({ title: '', content: '', category: selectedCategory === 'Alla' ? 'Allmänt' : selectedCategory })
     setShowMobileEditor(true) // Visa editor i mobilvy
     // Focus på editor efter en kort fördröjning
     setTimeout(() => {
@@ -141,6 +197,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
   function handleSelectNote(note) {
     setSelectedNote(note)
     setIsCreating(false)
+    setShowCustomCategory(false)
     setEditData({
       title: note.title,
       content: note.content || '',
@@ -200,11 +257,16 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
 
   function handleCancel() {
     setIsCreating(false)
+    setShowCustomCategory(false)
     if (selectedNote) {
-      setEditData({ title: selectedNote.title, content: selectedNote.content || '' })
+      setEditData({
+        title: selectedNote.title,
+        content: selectedNote.content || '',
+        category: selectedNote.category || 'Allmänt'
+      })
     } else {
       setSelectedNote(null)
-      setEditData({ title: '', content: '' })
+      setEditData({ title: '', content: '', category: 'Allmänt' })
       setShowMobileEditor(false) // Stäng mobilvy om vi avbryter
     }
   }
@@ -460,22 +522,21 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
       <div className={`flex flex-col gap-2 ${showMobileEditor ? 'hidden lg:flex' : 'flex'}`}>
         <div className="task-card flex-1 overflow-hidden flex flex-row gap-0">
           {/* Vertikala kategori-flikar till vänster - Visa alltid i desktop, i mobil bara när showMobileCategoryView är true */}
-          <div className={`w-36 border-r border-gray-200 py-2 flex-col gap-1 overflow-y-auto scrollbar-hide ${showMobileCategoryView ? 'flex' : 'hidden lg:flex'}`}>
-            {allCategories.map(category => {
+          <div className={`w-44 border-r border-gray-200 py-2 flex-col gap-1 overflow-y-auto scrollbar-hide ${showMobileCategoryView ? 'flex' : 'hidden lg:flex'}`}>
+            {allCategories.map((category, index) => {
               const count = category === 'Alla'
                 ? notes.length
                 : notes.filter(n => (n.category || 'Allmänt') === category).length
 
               const isActive = selectedCategory === category
+              const isAlla = category === 'Alla'
+              const isFirst = !isAlla && index === 1 // First non-'Alla' category
+              const isLast = !isAlla && index === allCategories.length - 1
 
               return (
-                <button
+                <div
                   key={category}
-                  onClick={() => {
-                    setSelectedCategory(category)
-                    setShowMobileCategoryView(false) // Stäng kategoriöversikt i mobil
-                  }}
-                  className={`relative flex items-center gap-2 px-3 py-2 transition-all group ${
+                  className={`relative flex items-center gap-1 transition-all group ${
                     isActive
                       ? 'bg-blue-50'
                       : 'hover:bg-gray-50'
@@ -486,25 +547,71 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                     isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'
                   } transition-opacity`}></div>
 
-                  {/* Färgad prick */}
-                  <div className={`w-3 h-3 flex-shrink-0 ${getCategoryColor(category)} rounded-full ${
-                    isActive ? 'ring-2 ring-blue-300' : ''
-                  }`}></div>
+                  <button
+                    onClick={() => {
+                      setSelectedCategory(category)
+                      setShowMobileCategoryView(false) // Stäng kategoriöversikt i mobil
+                    }}
+                    className="flex-1 text-left px-3 py-2 transition-all flex items-center gap-2"
+                  >
+                    {/* Färgad prick */}
+                    <div className={`w-3 h-3 flex-shrink-0 ${getCategoryColor(category)} rounded-full ${
+                      isActive ? 'ring-2 ring-blue-300' : ''
+                    }`}></div>
 
-                  {/* Kategorinamn */}
-                  <span className={`text-sm flex-1 text-left truncate ${
-                    isActive ? 'font-semibold text-gray-900' : 'text-gray-700'
-                  }`}>
-                    {category}
-                  </span>
+                    {/* Kategorinamn */}
+                    <span className={`text-sm flex-1 truncate ${
+                      isActive ? 'font-semibold text-gray-900' : 'text-gray-700'
+                    }`}>
+                      {category}
+                    </span>
 
-                  {/* Antal */}
-                  <span className={`text-xs flex-shrink-0 ${
-                    isActive ? 'text-gray-600' : 'text-gray-400'
-                  }`}>
-                    {count}
-                  </span>
-                </button>
+                    {/* Antal */}
+                    <span className={`text-xs flex-shrink-0 ${
+                      isActive ? 'text-gray-600' : 'text-gray-400'
+                    }`}>
+                      {count}
+                    </span>
+                  </button>
+
+                  {/* Upp/ner-knappar */}
+                  <div className="flex flex-col w-6">
+                    {!isAlla && (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            moveNoteCategoryUp(category)
+                          }}
+                          disabled={isFirst}
+                          className={`p-0.5 rounded transition-colors ${
+                            isFirst
+                              ? 'text-gray-300 cursor-not-allowed'
+                              : 'text-gray-400 hover:text-blue-600 hover:bg-blue-100'
+                          }`}
+                          title="Flytta upp"
+                        >
+                          <ChevronUp className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            moveNoteCategoryDown(category)
+                          }}
+                          disabled={isLast}
+                          className={`p-0.5 rounded transition-colors ${
+                            isLast
+                              ? 'text-gray-300 cursor-not-allowed'
+                              : 'text-gray-400 hover:text-blue-600 hover:bg-blue-100'
+                          }`}
+                          title="Flytta ner"
+                        >
+                          <ChevronDown className="w-3 h-3" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
               )
             })}
           </div>
@@ -866,19 +973,46 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                 </div>
                 <div className="flex items-center gap-3">
                   <label className="text-sm font-medium text-gray-600">Kategori:</label>
-                  <input
-                    type="text"
-                    value={editData.category}
-                    onChange={(e) => setEditData(prev => ({ ...prev, category: e.target.value }))}
-                    placeholder="Allmänt"
-                    list="categories-list"
-                    className="flex-1 text-sm px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <datalist id="categories-list">
-                    {categories.map(cat => (
-                      <option key={cat} value={cat} />
-                    ))}
-                  </datalist>
+                  {!showCustomCategory ? (
+                    <select
+                      value={editData.category}
+                      onChange={(e) => {
+                        if (e.target.value === '__custom__') {
+                          setShowCustomCategory(true)
+                          setEditData(prev => ({ ...prev, category: '' }))
+                        } else {
+                          setEditData(prev => ({ ...prev, category: e.target.value }))
+                        }
+                      }}
+                      className="flex-1 text-sm px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      {allCategories.filter(cat => cat !== 'Alla').map(cat => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                      <option value="__custom__">+ Ny kategori</option>
+                    </select>
+                  ) : (
+                    <div className="flex-1 flex gap-2">
+                      <input
+                        type="text"
+                        value={editData.category}
+                        onChange={(e) => setEditData(prev => ({ ...prev, category: e.target.value }))}
+                        placeholder="Skriv ny kategori"
+                        className="flex-1 text-sm px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomCategory(false)}
+                        className="px-3 py-1.5 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg transition-colors"
+                        title="Tillbaka till dropdown"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 

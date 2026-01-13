@@ -8,6 +8,7 @@ import AITaskCreator from './components/AITaskCreator'
 import TaskForm from './components/TaskForm'
 import TaskCard from './components/TaskCard'
 import Notes from './components/Notes'
+import Dashboard from './components/Dashboard'
 import Settings from './components/Settings'
 import { Toaster } from 'react-hot-toast'
 import {
@@ -24,7 +25,9 @@ import {
   Plus,
   ChevronDown,
   BarChart3,
-  Layers
+  Layers,
+  ChevronUp,
+  ChevronsUpDown
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { sv } from 'date-fns/locale'
@@ -32,7 +35,7 @@ import { sv } from 'date-fns/locale'
 export default function App() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('notes') // tasks, notes - Default to notes
+  const [activeTab, setActiveTab] = useState('dashboard') // dashboard, tasks, notes - Default to dashboard
   const [filter, setFilter] = useState('active') // all, active, completed - Default to active
   const [selectedList, setSelectedList] = useState(null)
   const [selectedCategory, setSelectedCategory] = useState('all') // Kategorifilter för uppgifter
@@ -40,6 +43,10 @@ export default function App() {
   const [showTaskFormModal, setShowTaskFormModal] = useState(false)
   const [openMobileMenu, setOpenMobileMenu] = useState(null) // 'overview', 'filter', 'lists', 'categories', or null
   const [triggerNoteCreate, setTriggerNoteCreate] = useState(0) // Trigger för att skapa ny anteckning
+  const [categoryOrder, setCategoryOrder] = useState(() => {
+    const saved = localStorage.getItem('categoryOrder')
+    return saved ? JSON.parse(saved) : []
+  })
   const mobileMenuRef = useRef(null)
 
   const {
@@ -96,6 +103,40 @@ export default function App() {
     await supabase.auth.signOut()
   }
 
+  function moveCategoryUp(category) {
+    if (category === 'all') return // Kan inte flytta 'all'
+
+    const currentCategories = categories.filter(c => c !== 'all')
+    const currentIndex = currentCategories.indexOf(category)
+
+    if (currentIndex <= 0) return // Redan högst upp
+
+    const newOrder = [...currentCategories]
+    const temp = newOrder[currentIndex]
+    newOrder[currentIndex] = newOrder[currentIndex - 1]
+    newOrder[currentIndex - 1] = temp
+
+    setCategoryOrder(newOrder)
+    localStorage.setItem('categoryOrder', JSON.stringify(newOrder))
+  }
+
+  function moveCategoryDown(category) {
+    if (category === 'all') return // Kan inte flytta 'all'
+
+    const currentCategories = categories.filter(c => c !== 'all')
+    const currentIndex = currentCategories.indexOf(category)
+
+    if (currentIndex >= currentCategories.length - 1) return // Redan längst ner
+
+    const newOrder = [...currentCategories]
+    const temp = newOrder[currentIndex]
+    newOrder[currentIndex] = newOrder[currentIndex + 1]
+    newOrder[currentIndex + 1] = temp
+
+    setCategoryOrder(newOrder)
+    localStorage.setItem('categoryOrder', JSON.stringify(newOrder))
+  }
+
   async function handleTasksCreated(aiTasks) {
     for (const task of aiTasks) {
       await createTask({
@@ -131,7 +172,27 @@ export default function App() {
   }
 
   const lists = [...new Set(tasks.map(t => t.list_name).filter(Boolean))]
-  const categories = ['all', ...new Set(tasks.map(t => t.category || 'Allmänt'))]
+  const rawCategories = ['all', ...new Set(tasks.map(t => t.category || 'Allmänt'))]
+
+  // Sortera kategorier baserat på sparad ordning
+  const categories = rawCategories.sort((a, b) => {
+    if (a === 'all') return -1 // 'all' ska alltid vara först
+    if (b === 'all') return 1
+
+    const indexA = categoryOrder.indexOf(a)
+    const indexB = categoryOrder.indexOf(b)
+
+    // Om båda finns i ordningen, sortera enligt ordning
+    if (indexA !== -1 && indexB !== -1) {
+      return indexA - indexB
+    }
+    // Om bara A finns i ordningen, sätt den före B
+    if (indexA !== -1) return -1
+    // Om bara B finns i ordningen, sätt den före A
+    if (indexB !== -1) return 1
+    // Annars alfabetisk ordning
+    return a.localeCompare(b)
+  })
 
   const filteredTasks = tasks.filter(task => {
     if (selectedList && task.list_name !== selectedList) return false
@@ -201,6 +262,17 @@ export default function App() {
         <div className="mb-4 flex items-center justify-between gap-4 flex-wrap">
           <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 border border-gray-100 inline-flex gap-2">
             <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                activeTab === 'dashboard'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4" />
+              Dashboard
+            </button>
+            <button
               onClick={() => setActiveTab('tasks')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
                 activeTab === 'tasks'
@@ -261,7 +333,26 @@ export default function App() {
           )}
         </div>
 
-        {activeTab === 'notes' ? (
+        {activeTab === 'dashboard' ? (
+          <Dashboard
+            tasks={tasks}
+            notes={notes}
+            onTaskClick={(task) => {
+              setActiveTab('tasks')
+              // Optional: scroll to or highlight the task
+            }}
+            onNoteClick={(note) => {
+              setActiveTab('notes')
+              // Optional: open the note in editor
+            }}
+            onCategoryClick={(category) => {
+              setSelectedCategory(category)
+              setActiveTab('tasks')
+            }}
+            onViewAllTasks={() => setActiveTab('tasks')}
+            onViewAllNotes={() => setActiveTab('notes')}
+          />
+        ) : activeTab === 'notes' ? (
           <Notes
             notes={notes}
             onCreateNote={createNote}
@@ -437,44 +528,88 @@ export default function App() {
             <aside className="hidden lg:block lg:col-span-1 space-y-4">
             {/* Category Filter */}
             <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gray-100">
-              <h2 className="font-semibold text-gray-900 mb-3">Kategorier</h2>
+              <h2 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                Kategorier
+                <ChevronsUpDown className="w-4 h-4 text-gray-400" />
+              </h2>
               <div className="space-y-1">
-                {categories.map(category => (
-                  <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
-                    className={`w-full text-left px-3 py-2 rounded-lg transition-all ${
-                      selectedCategory === category
-                        ? 'bg-purple-50 text-purple-700 font-medium'
-                        : 'text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    {category === 'all' ? 'Alla kategorier' : category}
-                  </button>
-                ))}
-              </div>
-            </div>
+                {categories.map((category, index) => {
+                  const isAll = category === 'all'
+                  const isFirst = !isAll && index === 1 // First non-'all' category
+                  const isLast = !isAll && index === categories.length - 1
 
-            {/* Stats */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gray-100">
-              <h2 className="font-semibold text-gray-900 mb-3">Översikt</h2>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Totalt</span>
-                  <span className="font-semibold text-gray-900">{stats.total}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Aktiva</span>
-                  <span className="font-semibold text-blue-600">{stats.active}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Klara</span>
-                  <span className="font-semibold text-green-600">{stats.completed}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Idag</span>
-                  <span className="font-semibold text-purple-600">{stats.today}</span>
-                </div>
+                  // Räkna antal uppgifter i denna kategori
+                  const count = isAll
+                    ? tasks.length
+                    : tasks.filter(t => (t.category || 'Allmänt') === category).length
+
+                  return (
+                    <div
+                      key={category}
+                      className={`flex items-center gap-1 rounded-lg transition-all ${
+                        selectedCategory === category
+                          ? 'bg-purple-50'
+                          : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      <button
+                        onClick={() => setSelectedCategory(category)}
+                        className={`flex-1 text-left px-3 py-2 transition-all flex items-center gap-2 ${
+                          selectedCategory === category
+                            ? 'text-purple-700 font-medium'
+                            : 'text-gray-600'
+                        }`}
+                      >
+                        <span className="flex-1 truncate">
+                          {category === 'all' ? 'Alla kategorier' : category}
+                        </span>
+                        <span className={`text-xs flex-shrink-0 ${
+                          selectedCategory === category
+                            ? 'text-purple-600'
+                            : 'text-gray-400'
+                        }`}>
+                          {count}
+                        </span>
+                      </button>
+                      <div className="flex flex-col w-6">
+                        {!isAll && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                moveCategoryUp(category)
+                              }}
+                              disabled={isFirst}
+                              className={`p-0.5 rounded transition-colors ${
+                                isFirst
+                                  ? 'text-gray-300 cursor-not-allowed'
+                                  : 'text-gray-400 hover:text-purple-600 hover:bg-purple-100'
+                              }`}
+                              title="Flytta upp"
+                            >
+                              <ChevronUp className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                moveCategoryDown(category)
+                              }}
+                              disabled={isLast}
+                              className={`p-0.5 rounded transition-colors ${
+                                isLast
+                                  ? 'text-gray-300 cursor-not-allowed'
+                                  : 'text-gray-400 hover:text-purple-600 hover:bg-purple-100'
+                              }`}
+                              title="Flytta ner"
+                            >
+                              <ChevronDown className="w-3 h-3" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
 
@@ -552,6 +687,29 @@ export default function App() {
                 </div>
               </div>
             )}
+
+            {/* Stats */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border border-gray-100">
+              <h2 className="font-semibold text-gray-900 mb-3">Översikt</h2>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Totalt</span>
+                  <span className="font-semibold text-gray-900">{stats.total}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Aktiva</span>
+                  <span className="font-semibold text-blue-600">{stats.active}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Klara</span>
+                  <span className="font-semibold text-green-600">{stats.completed}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Idag</span>
+                  <span className="font-semibold text-purple-600">{stats.today}</span>
+                </div>
+              </div>
+            </div>
           </aside>
 
           {/* Main Content */}
