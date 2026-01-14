@@ -14,9 +14,9 @@ export function useNotes(userId) {
 
     fetchNotes()
 
-    // Subscribe to realtime changes
+    // Subscribe to realtime changes for notes and task_note_links
     const channel = supabase
-      .channel('notes_changes')
+      .channel('notes_and_links_changes')
       .on(
         'postgres_changes',
         {
@@ -26,6 +26,19 @@ export function useNotes(userId) {
           filter: `user_id=eq.${userId}`
         },
         () => {
+          fetchNotes()
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'task_note_links',
+          filter: `user_id=eq.${userId}`
+        },
+        () => {
+          console.log('Task-note link changed, refetching notes...')
           fetchNotes()
         }
       )
