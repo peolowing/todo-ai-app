@@ -13,7 +13,6 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
   const [showDetails, setShowDetails] = useState(false)
   const [showCustomCategory, setShowCustomCategory] = useState(false)
   const [showLinkModal, setShowLinkModal] = useState(false)
-  const [showLinkedNotes, setShowLinkedNotes] = useState(false)
   const [editData, setEditData] = useState({
     title: task.title,
     description: task.description || '',
@@ -218,32 +217,18 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
           {/* Linked Notes Section in Details View (read-only) */}
           {task.linkedNotes && task.linkedNotes.length > 0 && (
             <div className="pt-3 border-t border-gray-100">
-              <button
-                onClick={() => setShowLinkedNotes(!showLinkedNotes)}
-                className="flex items-center justify-between w-full text-left mb-1 hover:text-blue-600 transition-colors"
-              >
-                <h4 className="text-sm font-semibold text-gray-700">
-                  Länkade anteckningar ({task.linkedNotes.length})
-                </h4>
-                {showLinkedNotes ? (
-                  <ChevronUp className="w-4 h-4 text-gray-500" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-gray-500" />
-                )}
-              </button>
-              {showLinkedNotes && (
-                <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
-                  {task.linkedNotes.map(note => (
-                    <button
-                      key={note.id}
-                      onClick={() => onNoteClick?.(note)}
-                      className="text-gray-700 underline hover:text-blue-600 transition-colors"
-                    >
-                      {note.title}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <h4 className="text-sm font-semibold text-gray-700 mb-1">Länkade anteckningar</h4>
+              <div className="flex flex-wrap gap-x-3 gap-y-1">
+                {task.linkedNotes.map(note => (
+                  <button
+                    key={note.id}
+                    onClick={() => onNoteClick?.(note)}
+                    className="text-gray-700 underline hover:text-blue-600 transition-colors"
+                  >
+                    {note.title}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -296,8 +281,8 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
             <textarea
               value={editData.description}
               onChange={(e) => handleChange('description', e.target.value)}
-              rows={2}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              rows={10}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
             />
           </div>
 

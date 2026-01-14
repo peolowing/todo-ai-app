@@ -25,6 +25,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
   const [fontSize, setFontSize] = useState('14px') // Font size state
   const [showCustomCategory, setShowCustomCategory] = useState(false) // För att visa custom category input
   const [showLinkModal, setShowLinkModal] = useState(false) // För länkmodal
+  const [showLinkedTasks, setShowLinkedTasks] = useState(false) // För att visa/dölja länkade uppgifter
   const [noteCategoryOrder, setNoteCategoryOrder] = useState(() => {
     const saved = localStorage.getItem('noteCategoryOrder')
     return saved ? JSON.parse(saved) : []
@@ -1163,41 +1164,54 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
               {/* Linked Tasks Section - Show when editing */}
               {(selectedNote || isCreating) && (
                 <div className="mt-4 border-t border-gray-200 pt-4">
-                  <div className="flex items-center justify-between mb-3">
+                  <button
+                    onClick={() => setShowLinkedTasks(!showLinkedTasks)}
+                    className="flex items-center justify-between w-full text-left mb-3 hover:text-blue-600 transition-colors"
+                  >
                     <h4 className="text-xs font-medium text-gray-700">
                       Länkade uppgifter ({selectedNote?.linkedTasks?.length || 0})
                     </h4>
-                    {selectedNote && (
-                      <button
-                        onClick={() => setShowLinkModal(true)}
-                        className="text-xs px-2 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
-                      >
-                        <LinkIcon className="w-3 h-3" />
-                        Länka
-                      </button>
+                    {showLinkedTasks ? (
+                      <ChevronUp className="w-4 h-4 text-gray-500" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-gray-500" />
                     )}
-                  </div>
+                  </button>
 
-                  {selectedNote?.linkedTasks && selectedNote.linkedTasks.length > 0 ? (
-                    <div className="space-y-1.5">
-                      {selectedNote.linkedTasks.map(task => (
-                        <div key={task.id} className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded-lg group hover:bg-blue-100 transition-colors">
-                          <CheckSquare className="w-3 h-3 text-blue-600 flex-shrink-0" />
-                          <span className="flex-1 text-xs text-gray-700 font-medium truncate">
-                            {task.title}
-                          </span>
-                          <button
-                            onClick={() => handleUnlinkTask(task.id)}
-                            className="p-0.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-all"
-                            title="Ta bort länk"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
+                  {showLinkedTasks && (
+                    <>
+                      {selectedNote && (
+                        <button
+                          onClick={() => setShowLinkModal(true)}
+                          className="mb-3 text-xs px-2 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
+                        >
+                          <LinkIcon className="w-3 h-3" />
+                          Länka
+                        </button>
+                      )}
+
+                      {selectedNote?.linkedTasks && selectedNote.linkedTasks.length > 0 ? (
+                        <div className="space-y-1.5">
+                          {selectedNote.linkedTasks.map(task => (
+                            <div key={task.id} className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded-lg group hover:bg-blue-100 transition-colors">
+                              <CheckSquare className="w-3 h-3 text-blue-600 flex-shrink-0" />
+                              <span className="flex-1 text-xs text-gray-700 font-medium truncate">
+                                {task.title}
+                              </span>
+                              <button
+                                onClick={() => handleUnlinkTask(task.id)}
+                                className="p-0.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-all"
+                                title="Ta bort länk"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-gray-500 italic">Inga länkade uppgifter</p>
+                      ) : (
+                        <p className="text-xs text-gray-500 italic">Inga länkade uppgifter</p>
+                      )}
+                    </>
                   )}
                 </div>
               )}

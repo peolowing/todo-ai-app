@@ -138,8 +138,8 @@ export default function TaskForm({ onTaskCreated, showModal, onClose }) {
             value={formData.description}
             onChange={handleChange}
             placeholder="Lägg till detaljer..."
-            rows={3}
-            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            rows={10}
+            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
             disabled={loading}
           />
         </div>
