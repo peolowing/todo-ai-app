@@ -39,14 +39,45 @@ export function useNotes(userId) {
   async function fetchNotes() {
     try {
       setLoading(true)
-      const { data, error } = await supabase
+      const { data: notesData, error } = await supabase
         .from('notes')
         .select('*')
         .eq('user_id', userId)
         .order('updated_at', { ascending: false })
 
       if (error) throw error
-      setNotes(data || [])
+
+      // Fetch linked tasks for each note
+      const notesWithLinkedTasks = await Promise.all(
+        (notesData || []).map(async (note) => {
+          const { data: linkedTasksData } = await supabase
+            .from('task_note_links')
+            .select(`
+              task_id,
+              tasks (
+                id,
+                title,
+                description,
+                completed,
+                priority,
+                due_date,
+                category,
+                list_name,
+                created_at,
+                updated_at
+              )
+            `)
+            .eq('note_id', note.id)
+            .eq('user_id', userId)
+
+          return {
+            ...note,
+            linkedTasks: linkedTasksData?.map(link => link.tasks) || []
+          }
+        })
+      )
+
+      setNotes(notesWithLinkedTasks)
     } catch (err) {
       setError(err.message)
       console.error('Error fetching notes:', err)

@@ -49,7 +49,7 @@ export function useTasks(userId) {
 
       if (tasksError) throw tasksError
 
-      // Fetch subtasks separately for each task
+      // Fetch subtasks and linked notes for each task
       const tasksWithSubtasks = await Promise.all(
         (tasksData || []).map(async (task) => {
           const { data: subtasksData } = await supabase
@@ -57,9 +57,27 @@ export function useTasks(userId) {
             .select('*')
             .eq('task_id', task.id)
 
+          // Fetch linked notes for this task
+          const { data: linkedNotesData } = await supabase
+            .from('task_note_links')
+            .select(`
+              note_id,
+              notes (
+                id,
+                title,
+                content,
+                category,
+                created_at,
+                updated_at
+              )
+            `)
+            .eq('task_id', task.id)
+            .eq('user_id', userId)
+
           return {
             ...task,
-            subtasks: subtasksData || []
+            subtasks: subtasksData || [],
+            linkedNotes: linkedNotesData?.map(link => link.notes) || []
           }
         })
       )

@@ -364,6 +364,11 @@ export default function App() {
             triggerCreate={triggerNoteCreate}
             noteToOpen={selectedNoteToOpen}
             onNoteOpened={() => setSelectedNoteToOpen(null)}
+            allTasks={tasks}
+            onTaskClick={(task) => {
+              setSelectedTaskToOpen(task)
+              setActiveTab('tasks')
+            }}
           />
         ) : (
           <>
@@ -754,6 +759,11 @@ export default function App() {
                         categories={categories}
                         taskToOpen={selectedTaskToOpen}
                         onTaskOpened={() => setSelectedTaskToOpen(null)}
+                        allNotes={notes}
+                        onNoteClick={(note) => {
+                          setSelectedNoteToOpen(note)
+                          setActiveTab('notes')
+                        }}
                       />
                     ))}
                   </AnimatePresence>

@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Check, Trash2, Calendar, Flag, ChevronDown, ChevronUp, Edit2, Save, X } from 'lucide-react'
+import { Check, Trash2, Calendar, Flag, ChevronDown, ChevronUp, Edit2, Save, X, Link as LinkIcon, FileText } from 'lucide-react'
 import { format } from 'date-fns'
 import { sv } from 'date-fns/locale'
 import toast from 'react-hot-toast'
+import LinkModal from './LinkModal'
+import { useTaskNoteLinks } from '../hooks/useTaskNoteLinks'
 
-export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, onUpdate, categories = [], taskToOpen, onTaskOpened }) {
+export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, onUpdate, categories = [], allNotes = [], taskToOpen, onTaskOpened, onNoteClick }) {
   const [expanded, setExpanded] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
   const [showCustomCategory, setShowCustomCategory] = useState(false)
+  const [showLinkModal, setShowLinkModal] = useState(false)
   const [editData, setEditData] = useState({
     title: task.title,
     description: task.description || '',
@@ -18,6 +21,8 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
     list_name: task.list_name || '',
     category: task.category || 'Allmänt'
   })
+
+  const { createLink, deleteLink } = useTaskNoteLinks()
 
   const priorityColors = {
     high: 'text-red-600 bg-red-50 border-red-200',
@@ -83,6 +88,14 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
 
   function handleChange(field, value) {
     setEditData(prev => ({ ...prev, [field]: value }))
+  }
+
+  async function handleLinkNote(noteId) {
+    await createLink(task.id, noteId)
+  }
+
+  async function handleUnlinkNote(noteId) {
+    await deleteLink(task.id, noteId)
   }
 
   if (showDetails && !isEditing) {
@@ -210,7 +223,58 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
               </div>
             </div>
           )}
+
+          {/* Linked Notes Section */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-semibold text-gray-700">
+                Länkade anteckningar ({task.linkedNotes?.length || 0})
+              </h4>
+              <button
+                onClick={() => setShowLinkModal(true)}
+                className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
+              >
+                <LinkIcon className="w-3 h-3" />
+                Länka anteckning
+              </button>
+            </div>
+
+            {task.linkedNotes && task.linkedNotes.length > 0 ? (
+              <div className="space-y-2">
+                {task.linkedNotes.map(note => (
+                  <div key={note.id} className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg group hover:bg-amber-100 transition-colors">
+                    <FileText className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                    <button
+                      onClick={() => onNoteClick?.(note)}
+                      className="flex-1 text-left text-sm text-gray-700 hover:text-blue-600 font-medium truncate"
+                    >
+                      {note.title}
+                    </button>
+                    <button
+                      onClick={() => handleUnlinkNote(note.id)}
+                      className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-all opacity-0 group-hover:opacity-100"
+                      title="Ta bort länk"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 italic">Inga länkade anteckningar ännu</p>
+            )}
+          </div>
         </div>
+
+        <LinkModal
+          isOpen={showLinkModal}
+          onClose={() => setShowLinkModal(false)}
+          items={allNotes}
+          linkedIds={task.linkedNotes?.map(n => n.id) || []}
+          onLink={handleLinkNote}
+          onUnlink={handleUnlinkNote}
+          type="note"
+        />
       </motion.div>
     )
   }

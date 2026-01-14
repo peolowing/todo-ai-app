@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Edit2, Trash2, Save, X, FileText, Search, Sparkles, Loader2, CheckSquare, StickyNote, Image as ImageIcon, ArrowLeft, ChevronDown, Bold, Italic, Underline, List, ListOrdered, Type, ChevronUp, ChevronsUpDown } from 'lucide-react'
+import { Plus, Edit2, Trash2, Save, X, FileText, Search, Sparkles, Loader2, CheckSquare, StickyNote, Image as ImageIcon, ArrowLeft, ChevronDown, Bold, Italic, Underline, List, ListOrdered, Type, ChevronUp, ChevronsUpDown, Link as LinkIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { sv } from 'date-fns/locale'
 import toast from 'react-hot-toast'
 import { structureNotesOnly, extractTasksOnly, extractTextFromImage, processCustomPrompt } from '../lib/openai'
+import LinkModal from './LinkModal'
+import { useTaskNoteLinks } from '../hooks/useTaskNoteLinks'
 
-export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote, onCreateTask, triggerCreate, noteToOpen, onNoteOpened }) {
+export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote, onCreateTask, triggerCreate, noteToOpen, onNoteOpened, allTasks = [], onTaskClick }) {
   const [selectedNote, setSelectedNote] = useState(null)
   const [isCreating, setIsCreating] = useState(false)
   const [editData, setEditData] = useState({ title: '', content: '', category: 'Allmänt' })
@@ -22,6 +24,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
   const [customPrompt, setCustomPrompt] = useState('') // Egen prompt text
   const [fontSize, setFontSize] = useState('16px') // Font size state
   const [showCustomCategory, setShowCustomCategory] = useState(false) // För att visa custom category input
+  const [showLinkModal, setShowLinkModal] = useState(false) // För länkmodal
   const [noteCategoryOrder, setNoteCategoryOrder] = useState(() => {
     const saved = localStorage.getItem('noteCategoryOrder')
     return saved ? JSON.parse(saved) : []
@@ -29,6 +32,8 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
   const fileInputRef = useRef(null)
   const aiDropdownRef = useRef(null)
   const editorRef = useRef(null)
+
+  const { createLink, deleteLink } = useTaskNoteLinks()
 
   // Stäng AI-dropdown när man klickar utanför
   useEffect(() => {
@@ -494,6 +499,17 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
       const htmlContent = editorRef.current.innerHTML
       setEditData(prev => ({ ...prev, content: htmlContent }))
     }
+  }
+
+  // Hantera länkning av uppgifter
+  async function handleLinkTask(taskId) {
+    if (!selectedNote) return
+    await createLink(taskId, selectedNote.id)
+  }
+
+  async function handleUnlinkTask(taskId) {
+    if (!selectedNote) return
+    await deleteLink(taskId, selectedNote.id)
   }
 
   // Hantera keyboard shortcuts i editor
@@ -1125,9 +1141,65 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                 }}
                 data-placeholder={isCreating ? "Skriv eller klistra in din text här...\n\nTips:\n• Tryck Ctrl/Cmd + D för att infoga dagens datum\n• AI kan strukturera texter och extrahera uppgifter\n• Ladda upp bilder för att extrahera text" : "Skriv dina anteckningar här...\n\nTryck Ctrl/Cmd + D för att infoga datum"}
               />
+
+              {/* Linked Tasks Section - Only show when viewing existing note */}
+              {selectedNote && !isCreating && (
+                <div className="mt-4 border-t border-gray-200 pt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-semibold text-gray-700">
+                      Länkade uppgifter ({selectedNote.linkedTasks?.length || 0})
+                    </h4>
+                    <button
+                      onClick={() => setShowLinkModal(true)}
+                      className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
+                    >
+                      <LinkIcon className="w-3 h-3" />
+                      Länka uppgift
+                    </button>
+                  </div>
+
+                  {selectedNote.linkedTasks && selectedNote.linkedTasks.length > 0 ? (
+                    <div className="space-y-2">
+                      {selectedNote.linkedTasks.map(task => (
+                        <div key={task.id} className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg group hover:bg-blue-100 transition-colors">
+                          <CheckSquare className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                          <button
+                            onClick={() => onTaskClick?.(task)}
+                            className="flex-1 text-left text-sm text-gray-700 hover:text-blue-600 font-medium truncate"
+                          >
+                            {task.title}
+                          </button>
+                          <button
+                            onClick={() => handleUnlinkTask(task.id)}
+                            className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-all opacity-0 group-hover:opacity-100"
+                            title="Ta bort länk"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 italic">Inga länkade uppgifter ännu</p>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>
+
+        {/* Link Modal */}
+        {selectedNote && (
+          <LinkModal
+            isOpen={showLinkModal}
+            onClose={() => setShowLinkModal(false)}
+            items={allTasks}
+            linkedIds={selectedNote.linkedTasks?.map(t => t.id) || []}
+            onLink={handleLinkTask}
+            onUnlink={handleUnlinkTask}
+            type="task"
+          />
+        )}
       </div>
 
       {/* Task Preview Modal */}
