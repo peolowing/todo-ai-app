@@ -706,7 +706,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                         : 'bg-white border-gray-200 hover:border-blue-200'
                     }`}
                   >
-                    <h3 className="font-medium text-gray-900 truncate">{note.title}</h3>
+                    <h3 className="text-sm font-medium text-gray-900 truncate">{note.title}</h3>
                     <p className="text-xs text-gray-500 mt-1">
                       {format(new Date(note.updated_at), 'd MMM yyyy, HH:mm', { locale: sv })}
                     </p>
@@ -881,7 +881,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                     value={editData.title}
                     onChange={(e) => setEditData(prev => ({ ...prev, title: e.target.value }))}
                     placeholder="Titel..."
-                    className="flex-1 text-lg lg:text-2xl font-bold border-none outline-none focus:ring-0 px-0"
+                    className="flex-1 text-base lg:text-lg font-bold border-none outline-none focus:ring-0 px-0"
                   />
 
                   {/* Action-knappar för mobil - endast synliga på mobil */}

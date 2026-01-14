@@ -118,7 +118,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
                 {task.completed && <Check className="w-4 h-4 text-white" />}
               </button>
               <div className="flex-1 min-w-0">
-                <h3 className={`text-xl font-bold text-gray-900 ${task.completed ? 'line-through text-gray-500' : ''}`}>
+                <h3 className={`text-lg font-bold text-gray-900 ${task.completed ? 'line-through text-gray-500' : ''}`}>
                   {task.title}
                 </h3>
               </div>
@@ -449,7 +449,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1">
               <h3
-                className={`font-semibold text-gray-900 ${
+                className={`text-sm font-semibold text-gray-900 ${
                   task.completed ? 'line-through text-gray-500' : ''
                 }`}
               >

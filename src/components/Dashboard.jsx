@@ -101,7 +101,7 @@ export default function Dashboard({
             <CheckSquare className="w-5 h-5 text-blue-600" />
             <span className="text-2xl font-bold text-blue-900">{stats.totalTasks}</span>
           </div>
-          <p className="text-sm font-medium text-blue-700">Totalt uppgifter</p>
+          <p className="text-xs font-medium text-blue-700">Totalt uppgifter</p>
           <p className="text-xs text-blue-600 mt-1">{stats.activeTasks} aktiva</p>
         </motion.div>
 
@@ -116,7 +116,7 @@ export default function Dashboard({
             <TrendingUp className="w-5 h-5 text-green-600" />
             <span className="text-2xl font-bold text-green-900">{stats.completionRate}%</span>
           </div>
-          <p className="text-sm font-medium text-green-700">Slutförda</p>
+          <p className="text-xs font-medium text-green-700">Slutförda</p>
           <p className="text-xs text-green-600 mt-1">{stats.completedTasks} av {stats.totalTasks}</p>
         </motion.div>
 
@@ -131,7 +131,7 @@ export default function Dashboard({
             <FileText className="w-5 h-5 text-purple-600" />
             <span className="text-2xl font-bold text-purple-900">{stats.totalNotes}</span>
           </div>
-          <p className="text-sm font-medium text-purple-700">Anteckningar</p>
+          <p className="text-xs font-medium text-purple-700">Anteckningar</p>
           <p className="text-xs text-purple-600 mt-1">Totalt sparade</p>
         </motion.div>
 
@@ -146,7 +146,7 @@ export default function Dashboard({
             <Calendar className="w-5 h-5 text-orange-600" />
             <span className="text-2xl font-bold text-orange-900">{todayTasks.length}</span>
           </div>
-          <p className="text-sm font-medium text-orange-700">Idag</p>
+          <p className="text-xs font-medium text-orange-700">Idag</p>
           <p className="text-xs text-orange-600 mt-1">Uppgifter med deadline</p>
         </motion.div>
       </div>
@@ -161,7 +161,7 @@ export default function Dashboard({
           className="bg-white/80 backdrop-blur-sm rounded-xl p-5 border border-gray-100"
         >
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+            <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
               <Clock className="w-5 h-5 text-blue-600" />
               Idag's Uppgifter
             </h2>
@@ -229,7 +229,7 @@ export default function Dashboard({
           className="bg-white/80 backdrop-blur-sm rounded-xl p-5 border border-gray-100"
         >
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+            <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
               <FileText className="w-5 h-5 text-purple-600" />
               Senaste Anteckningar
             </h2>

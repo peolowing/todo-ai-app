@@ -404,7 +404,7 @@ export default function App() {
                     <ChevronDown className={`w-3 h-3 transition-transform ${openMobileMenu === 'filter' ? 'rotate-180' : ''}`} />
                   </button>
                   {openMobileMenu === 'filter' && (
-                    <div className="fixed mt-2 left-4 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px]" style={{ zIndex: 1000, top: '180px' }}>
+                    <div className="absolute mt-2 left-0 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px] z-50">
                       <button
                         onClick={() => {
                           setFilter('all')
@@ -463,7 +463,7 @@ export default function App() {
                       <ChevronDown className={`w-3 h-3 transition-transform ${openMobileMenu === 'lists' ? 'rotate-180' : ''}`} />
                     </button>
                     {openMobileMenu === 'lists' && (
-                      <div className="fixed mt-2 left-4 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px]" style={{ zIndex: 1000, top: '180px' }}>
+                      <div className="absolute mt-2 left-0 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px] z-50">
                         <button
                           onClick={() => {
                             setSelectedList(null)
@@ -509,7 +509,7 @@ export default function App() {
                     <ChevronDown className={`w-3 h-3 transition-transform ${openMobileMenu === 'categories' ? 'rotate-180' : ''}`} />
                   </button>
                   {openMobileMenu === 'categories' && (
-                    <div className="fixed mt-2 left-4 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px]" style={{ zIndex: 1000, top: '180px' }}>
+                    <div className="absolute mt-2 left-0 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px] z-50">
                       {categories.map(category => (
                         <button
                           key={category}
@@ -724,7 +724,7 @@ export default function App() {
           {/* Main Content */}
           <main className="lg:col-span-3">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
                 <Calendar className="w-6 h-6 text-blue-600" />
                 {filter === 'all' && 'Alla uppgifter'}
                 {filter === 'active' && 'Aktiva uppgifter'}
