@@ -1051,21 +1051,21 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
 
               {/* Linked Tasks Section - Display when viewing note */}
               {selectedNote && !isCreating && selectedNote.linkedTasks && selectedNote.linkedTasks.length > 0 && (
-                <div className="mb-4">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                    Länkade uppgifter
-                  </h4>
-                  <div className="space-y-2">
+                <div className="mb-3 pb-3 border-b border-gray-100">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <CheckSquare className="w-3.5 h-3.5 text-gray-400" />
+                    <span className="text-xs font-medium text-gray-500">
+                      {selectedNote.linkedTasks.length} länkad{selectedNote.linkedTasks.length !== 1 ? 'e' : ''} uppgift{selectedNote.linkedTasks.length !== 1 ? 'er' : ''}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
                     {selectedNote.linkedTasks.map(task => (
                       <button
                         key={task.id}
                         onClick={() => onTaskClick?.(task)}
-                        className="w-full flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors text-left"
+                        className="text-xs px-2 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded transition-colors truncate max-w-[200px]"
                       >
-                        <CheckSquare className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                        <span className="flex-1 text-sm text-gray-700 hover:text-blue-600 font-medium truncate">
-                          {task.title}
-                        </span>
+                        {task.title}
                       </button>
                     ))}
                   </div>
