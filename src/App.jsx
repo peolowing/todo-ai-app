@@ -373,8 +373,8 @@ export default function App() {
         ) : (
           <>
             {/* Mobile Menu Bar */}
-            <div className="lg:hidden mb-4 overflow-visible" ref={mobileMenuRef}>
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 border border-gray-100 flex gap-2 overflow-x-auto scrollbar-hide overflow-y-visible">
+            <div className="lg:hidden mb-4" ref={mobileMenuRef} style={{ overflow: 'visible' }}>
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 border border-gray-100 flex gap-2" style={{ overflowX: 'auto', overflowY: 'visible' }}>
                 {/* AI Uppgifter Button */}
                 <button
                   onClick={() => setShowAIModal(true)}
