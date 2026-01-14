@@ -13,6 +13,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
   const [showDetails, setShowDetails] = useState(false)
   const [showCustomCategory, setShowCustomCategory] = useState(false)
   const [showLinkModal, setShowLinkModal] = useState(false)
+  const [showLinkedNotes, setShowLinkedNotes] = useState(false)
   const [editData, setEditData] = useState({
     title: task.title,
     description: task.description || '',
@@ -158,41 +159,31 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
           <div className="grid grid-cols-2 gap-4">
             {task.priority && (
               <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">Prioritet</h4>
-                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-md font-medium border ${priorityColors[task.priority]}`}>
-                  <Flag className="w-4 h-4" />
-                  {priorityLabels[task.priority]}
-                </span>
+                <h4 className="text-sm font-semibold text-gray-700 mb-1">Prioritet</h4>
+                <p className="text-gray-700">{priorityLabels[task.priority]}</p>
               </div>
             )}
 
             {task.due_date && (
               <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">Deadline</h4>
-                <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-md font-medium">
-                  <Calendar className="w-4 h-4" />
-                  {format(new Date(task.due_date), 'd MMMM yyyy', { locale: sv })}
-                </span>
+                <h4 className="text-sm font-semibold text-gray-700 mb-1">Deadline</h4>
+                <p className="text-gray-700">{format(new Date(task.due_date), 'd MMMM yyyy', { locale: sv })}</p>
               </div>
             )}
           </div>
 
-          <div className="flex gap-4">
+          <div className="grid grid-cols-2 gap-4">
             {task.list_name && (
               <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">Lista</h4>
-                <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-md font-medium text-sm">
-                  {task.list_name}
-                </span>
+                <h4 className="text-sm font-semibold text-gray-700 mb-1">Lista</h4>
+                <p className="text-gray-700">{task.list_name}</p>
               </div>
             )}
 
             {task.category && (
               <div>
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">Kategori</h4>
-                <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded-md font-medium text-sm">
-                  {task.category}
-                </span>
+                <h4 className="text-sm font-semibold text-gray-700 mb-1">Kategori</h4>
+                <p className="text-gray-700">{task.category}</p>
               </div>
             )}
           </div>
@@ -227,23 +218,32 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
           {/* Linked Notes Section in Details View (read-only) */}
           {task.linkedNotes && task.linkedNotes.length > 0 && (
             <div className="pt-3 border-t border-gray-100">
-              <div className="flex items-center gap-2 mb-1.5">
-                <FileText className="w-3.5 h-3.5 text-gray-400" />
-                <span className="text-xs font-medium text-gray-500">
-                  {task.linkedNotes.length} länkad{task.linkedNotes.length !== 1 ? 'e' : ''} anteckning{task.linkedNotes.length !== 1 ? 'ar' : ''}
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {task.linkedNotes.map(note => (
-                  <button
-                    key={note.id}
-                    onClick={() => onNoteClick?.(note)}
-                    className="text-xs px-2 py-1 bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 rounded transition-colors truncate max-w-[200px]"
-                  >
-                    {note.title}
-                  </button>
-                ))}
-              </div>
+              <button
+                onClick={() => setShowLinkedNotes(!showLinkedNotes)}
+                className="flex items-center justify-between w-full text-left mb-1 hover:text-blue-600 transition-colors"
+              >
+                <h4 className="text-sm font-semibold text-gray-700">
+                  Länkade anteckningar ({task.linkedNotes.length})
+                </h4>
+                {showLinkedNotes ? (
+                  <ChevronUp className="w-4 h-4 text-gray-500" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-gray-500" />
+                )}
+              </button>
+              {showLinkedNotes && (
+                <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+                  {task.linkedNotes.map(note => (
+                    <button
+                      key={note.id}
+                      onClick={() => onNoteClick?.(note)}
+                      className="text-gray-700 underline hover:text-blue-600 transition-colors"
+                    >
+                      {note.title}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

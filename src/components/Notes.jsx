@@ -22,7 +22,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
   const [showAIDropdown, setShowAIDropdown] = useState(false) // För AI-dropdown
   const [showCustomPrompt, setShowCustomPrompt] = useState(false) // För egen prompt modal
   const [customPrompt, setCustomPrompt] = useState('') // Egen prompt text
-  const [fontSize, setFontSize] = useState('16px') // Font size state
+  const [fontSize, setFontSize] = useState('14px') // Font size state
   const [showCustomCategory, setShowCustomCategory] = useState(false) // För att visa custom category input
   const [showLinkModal, setShowLinkModal] = useState(false) // För länkmodal
   const [noteCategoryOrder, setNoteCategoryOrder] = useState(() => {
@@ -1052,18 +1052,13 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
               {/* Linked Tasks Section - Display when viewing note */}
               {selectedNote && !isCreating && selectedNote.linkedTasks && selectedNote.linkedTasks.length > 0 && (
                 <div className="mb-3 pb-3 border-b border-gray-100">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <CheckSquare className="w-3.5 h-3.5 text-gray-400" />
-                    <span className="text-xs font-medium text-gray-500">
-                      {selectedNote.linkedTasks.length} länkad{selectedNote.linkedTasks.length !== 1 ? 'e' : ''} uppgift{selectedNote.linkedTasks.length !== 1 ? 'er' : ''}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-1">Länkade uppgifter</h4>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1">
                     {selectedNote.linkedTasks.map(task => (
                       <button
                         key={task.id}
                         onClick={() => onTaskClick?.(task)}
-                        className="text-xs px-2 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded transition-colors truncate max-w-[200px]"
+                        className="text-gray-700 underline hover:text-blue-600 transition-colors"
                       >
                         {task.title}
                       </button>
