@@ -1142,45 +1142,44 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                 data-placeholder={isCreating ? "Skriv eller klistra in din text här...\n\nTips:\n• Tryck Ctrl/Cmd + D för att infoga dagens datum\n• AI kan strukturera texter och extrahera uppgifter\n• Ladda upp bilder för att extrahera text" : "Skriv dina anteckningar här...\n\nTryck Ctrl/Cmd + D för att infoga datum"}
               />
 
-              {/* Linked Tasks Section - Only show when viewing existing note */}
-              {selectedNote && !isCreating && (
+              {/* Linked Tasks Section - Show when editing */}
+              {(selectedNote || isCreating) && (
                 <div className="mt-4 border-t border-gray-200 pt-4">
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-sm font-semibold text-gray-700">
-                      Länkade uppgifter ({selectedNote.linkedTasks?.length || 0})
+                    <h4 className="text-xs font-medium text-gray-700">
+                      Länkade uppgifter ({selectedNote?.linkedTasks?.length || 0})
                     </h4>
-                    <button
-                      onClick={() => setShowLinkModal(true)}
-                      className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
-                    >
-                      <LinkIcon className="w-3 h-3" />
-                      Länka uppgift
-                    </button>
+                    {selectedNote && (
+                      <button
+                        onClick={() => setShowLinkModal(true)}
+                        className="text-xs px-2 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
+                      >
+                        <LinkIcon className="w-3 h-3" />
+                        Länka
+                      </button>
+                    )}
                   </div>
 
-                  {selectedNote.linkedTasks && selectedNote.linkedTasks.length > 0 ? (
-                    <div className="space-y-2">
+                  {selectedNote?.linkedTasks && selectedNote.linkedTasks.length > 0 ? (
+                    <div className="space-y-1.5">
                       {selectedNote.linkedTasks.map(task => (
-                        <div key={task.id} className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg group hover:bg-blue-100 transition-colors">
-                          <CheckSquare className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                          <button
-                            onClick={() => onTaskClick?.(task)}
-                            className="flex-1 text-left text-sm text-gray-700 hover:text-blue-600 font-medium truncate"
-                          >
+                        <div key={task.id} className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded-lg group hover:bg-blue-100 transition-colors">
+                          <CheckSquare className="w-3 h-3 text-blue-600 flex-shrink-0" />
+                          <span className="flex-1 text-xs text-gray-700 font-medium truncate">
                             {task.title}
-                          </button>
+                          </span>
                           <button
                             onClick={() => handleUnlinkTask(task.id)}
-                            className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-all opacity-0 group-hover:opacity-100"
+                            className="p-0.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-all"
                             title="Ta bort länk"
                           >
-                            <X className="w-4 h-4" />
+                            <X className="w-3 h-3" />
                           </button>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-500 italic">Inga länkade uppgifter ännu</p>
+                    <p className="text-xs text-gray-500 italic">Inga länkade uppgifter</p>
                   )}
                 </div>
               )}

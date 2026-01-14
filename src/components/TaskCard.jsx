@@ -223,58 +223,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
               </div>
             </div>
           )}
-
-          {/* Linked Notes Section */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-semibold text-gray-700">
-                Länkade anteckningar ({task.linkedNotes?.length || 0})
-              </h4>
-              <button
-                onClick={() => setShowLinkModal(true)}
-                className="text-xs px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
-              >
-                <LinkIcon className="w-3 h-3" />
-                Länka anteckning
-              </button>
-            </div>
-
-            {task.linkedNotes && task.linkedNotes.length > 0 ? (
-              <div className="space-y-2">
-                {task.linkedNotes.map(note => (
-                  <div key={note.id} className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg group hover:bg-amber-100 transition-colors">
-                    <FileText className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                    <button
-                      onClick={() => onNoteClick?.(note)}
-                      className="flex-1 text-left text-sm text-gray-700 hover:text-blue-600 font-medium truncate"
-                    >
-                      {note.title}
-                    </button>
-                    <button
-                      onClick={() => handleUnlinkNote(note.id)}
-                      className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-all opacity-0 group-hover:opacity-100"
-                      title="Ta bort länk"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500 italic">Inga länkade anteckningar ännu</p>
-            )}
-          </div>
         </div>
-
-        <LinkModal
-          isOpen={showLinkModal}
-          onClose={() => setShowLinkModal(false)}
-          items={allNotes}
-          linkedIds={task.linkedNotes?.map(n => n.id) || []}
-          onLink={handleLinkNote}
-          onUnlink={handleUnlinkNote}
-          type="note"
-        />
       </motion.div>
     )
   }
@@ -409,7 +358,57 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
               )}
             </div>
           </div>
+
+          {/* Linked Notes Section in Edit Mode */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-xs font-medium text-gray-700">
+                Länkade anteckningar ({task.linkedNotes?.length || 0})
+              </h4>
+              <button
+                type="button"
+                onClick={() => setShowLinkModal(true)}
+                className="text-xs px-2 py-1 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors flex items-center gap-1"
+              >
+                <LinkIcon className="w-3 h-3" />
+                Länka
+              </button>
+            </div>
+
+            {task.linkedNotes && task.linkedNotes.length > 0 ? (
+              <div className="space-y-1.5">
+                {task.linkedNotes.map(note => (
+                  <div key={note.id} className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-200 rounded-lg group hover:bg-amber-100 transition-colors">
+                    <FileText className="w-3 h-3 text-amber-600 flex-shrink-0" />
+                    <span className="flex-1 text-xs text-gray-700 font-medium truncate">
+                      {note.title}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleUnlinkNote(note.id)}
+                      className="p-0.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-all"
+                      title="Ta bort länk"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-500 italic">Inga länkade anteckningar</p>
+            )}
+          </div>
         </div>
+
+        <LinkModal
+          isOpen={showLinkModal}
+          onClose={() => setShowLinkModal(false)}
+          items={allNotes}
+          linkedIds={task.linkedNotes?.map(n => n.id) || []}
+          onLink={handleLinkNote}
+          onUnlink={handleUnlinkNote}
+          type="note"
+        />
       </motion.div>
     )
   }
