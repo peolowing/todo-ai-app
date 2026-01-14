@@ -96,6 +96,8 @@ export function useTaskNoteLinks() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('No user found')
 
+      console.log('Creating link:', { taskId, noteId, userId: user.id })
+
       const { data, error } = await supabase
         .from('task_note_links')
         .insert({
@@ -112,9 +114,11 @@ export function useTaskNoteLinks() {
           toast.error('Länken finns redan')
           return null
         }
+        console.error('Create error:', error)
         throw error
       }
 
+      console.log('Created link:', data)
       await fetchLinks()
       toast.success('Länk skapad')
       return data
@@ -134,15 +138,22 @@ export function useTaskNoteLinks() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('No user found')
 
-      const { error } = await supabase
+      console.log('Deleting link:', { taskId, noteId, userId: user.id })
+
+      const { error, data } = await supabase
         .from('task_note_links')
         .delete()
         .eq('task_id', taskId)
         .eq('note_id', noteId)
         .eq('user_id', user.id)
+        .select()
 
-      if (error) throw error
+      if (error) {
+        console.error('Delete error:', error)
+        throw error
+      }
 
+      console.log('Deleted rows:', data)
       await fetchLinks()
       toast.success('Länk borttagen')
       return true
