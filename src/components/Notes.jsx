@@ -1049,6 +1049,29 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                 </p>
               )}
 
+              {/* Linked Tasks Section - Display when viewing note */}
+              {selectedNote && !isCreating && selectedNote.linkedTasks && selectedNote.linkedTasks.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                    Länkade uppgifter
+                  </h4>
+                  <div className="space-y-2">
+                    {selectedNote.linkedTasks.map(task => (
+                      <button
+                        key={task.id}
+                        onClick={() => onTaskClick?.(task)}
+                        className="w-full flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors text-left"
+                      >
+                        <CheckSquare className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                        <span className="flex-1 text-sm text-gray-700 hover:text-blue-600 font-medium truncate">
+                          {task.title}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Text Editor Toolbar */}
               <div className="border border-gray-200 rounded-t-lg bg-gray-50 px-2 py-2 flex flex-wrap items-center gap-1">
                 {/* Font Size */}

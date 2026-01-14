@@ -223,6 +223,29 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
               </div>
             </div>
           )}
+
+          {/* Linked Notes Section in Details View (read-only) */}
+          {task.linkedNotes && task.linkedNotes.length > 0 && (
+            <div>
+              <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                Länkade anteckningar
+              </h4>
+              <div className="space-y-2">
+                {task.linkedNotes.map(note => (
+                  <button
+                    key={note.id}
+                    onClick={() => onNoteClick?.(note)}
+                    className="w-full flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors text-left"
+                  >
+                    <FileText className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                    <span className="flex-1 text-sm text-gray-700 hover:text-blue-600 font-medium truncate">
+                      {note.title}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </motion.div>
     )
