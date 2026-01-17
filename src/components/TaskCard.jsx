@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
 import { Check, Trash2, Calendar, Flag, ChevronDown, ChevronUp, Edit2, Save, X, Link as LinkIcon, FileText } from 'lucide-react'
 import { format } from 'date-fns'
 import { sv } from 'date-fns/locale'
@@ -100,8 +99,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
 
   if (showDetails && !isEditing) {
     return (
-      <motion.div
-        layout
+      <div
         className="task-card"
       >
         <div className="space-y-4">
@@ -118,7 +116,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
                 {task.completed && <Check className="w-4 h-4 text-white" />}
               </button>
               <div className="flex-1 min-w-0">
-                <h3 className={`text-lg font-bold text-gray-900 ${task.completed ? 'line-through text-gray-500' : ''}`}>
+                <h3 className={`text-sm font-semibold text-gray-900 ${task.completed ? 'line-through text-gray-500' : ''}`}>
                   {task.title}
                 </h3>
               </div>
@@ -223,7 +221,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
                   <button
                     key={note.id}
                     onClick={() => onNoteClick?.(note)}
-                    className="text-gray-700 underline hover:text-blue-600 transition-colors"
+                    className="text-sm text-gray-700 underline hover:text-blue-600 transition-colors"
                   >
                     {note.title}
                   </button>
@@ -232,14 +230,13 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
             </div>
           )}
         </div>
-      </motion.div>
+      </div>
     )
   }
 
   if (isEditing) {
     return (
-      <motion.div
-        layout
+      <div
         className="task-card bg-blue-50 border-blue-200"
       >
         <div className="space-y-3">
@@ -417,16 +414,12 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
           onUnlink={handleUnlinkNote}
           type="note"
         />
-      </motion.div>
+      </div>
     )
   }
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
+    <div
       className={`task-card ${task.completed ? 'opacity-60' : ''} cursor-pointer`}
       onClick={() => setShowDetails(true)}
     >
@@ -514,10 +507,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
               </button>
 
               {expanded && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
+                <div
                   className="mt-2 space-y-2 pl-4 border-l-2 border-gray-200"
                 >
                   {task.subtasks.map(subtask => (
@@ -544,12 +534,12 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
                       </span>
                     </div>
                   ))}
-                </motion.div>
+                </div>
               )}
             </div>
           )}
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }

@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from './lib/supabase'
 import { useTasks } from './hooks/useTasks'
 import { useNotes } from './hooks/useNotes'
@@ -747,7 +746,6 @@ export default function App() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <AnimatePresence mode="popLayout">
                     {filteredTasks.map(task => (
                       <TaskCard
                         key={task.id}
@@ -766,7 +764,6 @@ export default function App() {
                         }}
                       />
                     ))}
-                  </AnimatePresence>
                 </div>
               )}
             </div>

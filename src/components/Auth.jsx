@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
 import { Mail, Lock, CheckCircle2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import toast from 'react-hot-toast'
@@ -39,20 +38,15 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+      <div
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 200 }}
+          <div
             className="inline-block p-4 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl mb-4"
           >
             <CheckCircle2 className="w-12 h-12 text-white" />
-          </motion.div>
+          </div>
           <h1 className="text-4xl font-display font-bold text-gray-900 mb-2">
             AI ToDo
           </h1>
@@ -61,10 +55,7 @@ export default function Auth() {
           </p>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
+        <div
           className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-gray-100"
         >
           <form onSubmit={handleAuth} className="space-y-6">
@@ -120,12 +111,12 @@ export default function Auth() {
               {isSignUp ? 'Har du redan ett konto? Logga in' : 'Inget konto? Skapa ett'}
             </button>
           </div>
-        </motion.div>
+        </div>
 
         <p className="text-center text-sm text-gray-500 mt-6">
           Säker autentisering med Supabase
         </p>
-      </motion.div>
+      </div>
     </div>
   )
 }

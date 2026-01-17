@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react'
 import { X, Search, Link as LinkIcon, Unlink } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
 
 export default function LinkModal({
   isOpen,
@@ -45,13 +44,8 @@ export default function LinkModal({
   const typeLabelPlural = type === 'task' ? 'uppgifter' : 'anteckningar'
 
   return (
-    <AnimatePresence>
-      {isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
+          <div
             className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col"
           >
             {/* Header */}
@@ -96,7 +90,7 @@ export default function LinkModal({
                     const linked = isLinked(item.id)
 
                     return (
-                      <motion.button
+                      <button
                         key={item.id}
                         onClick={() => handleToggleLink(item)}
                         className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
@@ -104,8 +98,6 @@ export default function LinkModal({
                             ? 'border-blue-500 bg-blue-50'
                             : 'border-gray-200 hover:border-gray-300 bg-white'
                         }`}
-                        whileHover={{ scale: 1.01 }}
-                        whileTap={{ scale: 0.99 }}
                       >
                         <div className="flex items-start gap-3">
                           <div className={`mt-1 p-1.5 rounded-lg ${
@@ -169,7 +161,7 @@ export default function LinkModal({
                             {linked ? 'Länkad' : 'Länka'}
                           </div>
                         </div>
-                      </motion.button>
+                      </button>
                     )
                   })}
                 </div>
@@ -188,9 +180,7 @@ export default function LinkModal({
                 Klar
               </button>
             </div>
-          </motion.div>
+          </div>
         </div>
-      )}
-    </AnimatePresence>
   )
 }

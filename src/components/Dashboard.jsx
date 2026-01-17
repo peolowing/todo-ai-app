@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion'
 import { CheckSquare, FileText, Calendar, AlertCircle, TrendingUp, Clock, BarChart3, ArrowRight } from 'lucide-react'
 import { format, isToday, isTomorrow, isThisWeek, parseISO } from 'date-fns'
 import { sv } from 'date-fns/locale'
@@ -92,9 +91,7 @@ export default function Dashboard({
       {/* Statistik widgets - Överst */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Totalt uppgifter */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+        <div
           className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-200"
         >
           <div className="flex items-center justify-between mb-2">
@@ -103,13 +100,10 @@ export default function Dashboard({
           </div>
           <p className="text-xs font-medium text-blue-700">Totalt uppgifter</p>
           <p className="text-xs text-blue-600 mt-1">{stats.activeTasks} aktiva</p>
-        </motion.div>
+        </div>
 
         {/* Slutförda */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+        <div
           className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200"
         >
           <div className="flex items-center justify-between mb-2">
@@ -118,13 +112,10 @@ export default function Dashboard({
           </div>
           <p className="text-xs font-medium text-green-700">Slutförda</p>
           <p className="text-xs text-green-600 mt-1">{stats.completedTasks} av {stats.totalTasks}</p>
-        </motion.div>
+        </div>
 
         {/* Anteckningar */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+        <div
           className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200"
         >
           <div className="flex items-center justify-between mb-2">
@@ -133,13 +124,10 @@ export default function Dashboard({
           </div>
           <p className="text-xs font-medium text-purple-700">Anteckningar</p>
           <p className="text-xs text-purple-600 mt-1">Totalt sparade</p>
-        </motion.div>
+        </div>
 
         {/* Idag's uppgifter */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+        <div
           className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4 border border-orange-200"
         >
           <div className="flex items-center justify-between mb-2">
@@ -148,16 +136,13 @@ export default function Dashboard({
           </div>
           <p className="text-xs font-medium text-orange-700">Idag</p>
           <p className="text-xs text-orange-600 mt-1">Uppgifter med deadline</p>
-        </motion.div>
+        </div>
       </div>
 
       {/* Huvudinnehåll - 2 kolumner på desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Idag's uppgifter */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+        <div
           className="bg-white/80 backdrop-blur-sm rounded-xl p-5 border border-gray-100"
         >
           <div className="flex items-center justify-between mb-4">
@@ -219,13 +204,10 @@ export default function Dashboard({
               <p className="text-sm">Inga uppgifter med deadline idag</p>
             </div>
           )}
-        </motion.div>
+        </div>
 
         {/* Senaste anteckningar */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
+        <div
           className="bg-white/80 backdrop-blur-sm rounded-xl p-5 border border-gray-100"
         >
           <div className="flex items-center justify-between mb-4">
@@ -282,16 +264,13 @@ export default function Dashboard({
               <p className="text-sm">Inga anteckningar ännu</p>
             </div>
           )}
-        </motion.div>
+        </div>
       </div>
 
       {/* Nedersta raden - 2 kolumner */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Kategorier */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
+        <div
           className="bg-white/80 backdrop-blur-sm rounded-xl p-5 border border-gray-100"
         >
           <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -334,13 +313,10 @@ export default function Dashboard({
               <p className="text-sm">Inga kategorier ännu</p>
             </div>
           )}
-        </motion.div>
+        </div>
 
         {/* Kommande deadlines */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
+        <div
           className="bg-white/80 backdrop-blur-sm rounded-xl p-5 border border-gray-100"
         >
           <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -384,7 +360,7 @@ export default function Dashboard({
               <p className="text-sm">Inga kommande deadlines</p>
             </div>
           )}
-        </motion.div>
+        </div>
       </div>
     </div>
   )

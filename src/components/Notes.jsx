@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Edit2, Trash2, Save, X, FileText, Search, Sparkles, Loader2, CheckSquare, StickyNote, Image as ImageIcon, ArrowLeft, ChevronDown, Bold, Italic, Underline, List, ListOrdered, Type, ChevronUp, ChevronsUpDown, Link as LinkIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { sv } from 'date-fns/locale'
@@ -673,13 +672,8 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
             </div>
 
             <div className="flex-1 overflow-y-auto p-3 space-y-2">
-            <AnimatePresence mode="wait">
               {filteredNotes.length === 0 ? (
-                <motion.div
-                  key="empty"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
+                <div
                   className="text-center py-8 text-gray-500"
                 >
                   <FileText className="w-12 h-12 mx-auto mb-2 text-gray-300" />
@@ -690,15 +684,11 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                       ? `Inga anteckningar i ${selectedCategory}`
                       : 'Inga anteckningar än'}
                   </p>
-                </motion.div>
+                </div>
               ) : (
                 filteredNotes.map(note => (
-                  <motion.div
+                  <div
                     key={note.id}
-                    layout
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
                     onClick={() => handleSelectNote(note)}
                     className={`p-3 rounded-lg border cursor-pointer transition-all ${
                       selectedNote?.id === note.id
@@ -710,10 +700,9 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                     <p className="text-xs text-gray-500 mt-1">
                       {format(new Date(note.updated_at), 'd MMM yyyy, HH:mm', { locale: sv })}
                     </p>
-                  </motion.div>
+                  </div>
                 ))
               )}
-            </AnimatePresence>
             </div>
           </div>
         </div>
@@ -773,12 +762,8 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
               </button>
 
               {/* Dropdown meny */}
-              <AnimatePresence>
                 {showAIDropdown && !aiLoading && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
+                  <div
                     className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden"
                   >
                     <button
@@ -836,9 +821,8 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                         <div className="text-xs text-gray-500">Extrahera text från bild</div>
                       </div>
                     </button>
-                  </motion.div>
+                  </div>
                 )}
-              </AnimatePresence>
 
               {/* Dold file input */}
               <input
@@ -881,7 +865,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                     value={editData.title}
                     onChange={(e) => setEditData(prev => ({ ...prev, title: e.target.value }))}
                     placeholder="Titel..."
-                    className="flex-1 text-base lg:text-lg font-bold border-none outline-none focus:ring-0 px-0"
+                    className="flex-1 text-sm font-semibold border-none outline-none focus:ring-0 px-0"
                   />
 
                   {/* Action-knappar för mobil - endast synliga på mobil */}
@@ -929,12 +913,8 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                         </button>
 
                         {/* Dropdown meny för mobil */}
-                        <AnimatePresence>
                           {showAIDropdown && !aiLoading && (
-                            <motion.div
-                              initial={{ opacity: 0, y: -10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -10 }}
+                            <div
                               className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50"
                             >
                               <button
@@ -992,9 +972,8 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                                   <div className="text-xs text-gray-500">Extrahera text från bild</div>
                                 </div>
                               </button>
-                            </motion.div>
+                            </div>
                           )}
-                        </AnimatePresence>
                       </div>
                     )}
                   </div>
@@ -1059,7 +1038,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                       <button
                         key={task.id}
                         onClick={() => onTaskClick?.(task)}
-                        className="text-gray-700 underline hover:text-blue-600 transition-colors"
+                        className="text-sm text-gray-700 underline hover:text-blue-600 transition-colors"
                       >
                         {task.title}
                       </button>
@@ -1234,13 +1213,9 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
       </div>
 
       {/* Task Preview Modal */}
-      <AnimatePresence>
         {showTaskPreview && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
+            <div
               className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[80vh] overflow-hidden flex flex-col"
             >
               <div className="p-6 border-b border-gray-200">
@@ -1326,19 +1301,14 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                   Skapa {previewTasks.length} uppgift{previewTasks.length > 1 ? 'er' : ''}
                 </button>
               </div>
-            </motion.div>
+            </div>
           </div>
         )}
-      </AnimatePresence>
 
       {/* Custom Prompt Modal */}
-      <AnimatePresence>
         {showCustomPrompt && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
+            <div
               className="bg-white rounded-xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col"
             >
               <div className="p-6 border-b border-gray-200">
@@ -1402,10 +1372,9 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                   )}
                 </button>
               </div>
-            </motion.div>
+            </div>
           </div>
         )}
-      </AnimatePresence>
     </div>
   )
 }

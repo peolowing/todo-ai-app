@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { motion } from 'framer-motion'
 import { Sparkles, Loader2, X } from 'lucide-react'
 import { parseTasksFromText } from '../lib/openai'
 import toast from 'react-hot-toast'
@@ -40,10 +39,7 @@ export default function AITaskCreator({ onTasksCreated, showModal, onClose }) {
 
   return createPortal(
     <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center p-4 overflow-y-auto" style={{ zIndex: 99999 }}>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
+      <div
         className="bg-white rounded-xl shadow-2xl max-w-2xl w-full my-4 sm:my-8"
       >
         <div className="p-6 border-b border-gray-200 flex items-center justify-between">
@@ -107,7 +103,7 @@ export default function AITaskCreator({ onTasksCreated, showModal, onClose }) {
             )}
           </button>
         </div>
-      </motion.div>
+      </div>
     </div>,
     document.body
   )
