@@ -666,7 +666,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Sök anteckningar..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -1336,7 +1336,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                   value={customPrompt}
                   onChange={(e) => setCustomPrompt(e.target.value)}
                   placeholder="T.ex: 'Översätt till engelska', 'Sammanfatta i 3 punkter', 'Gör om till en lista', 'Rätta grammatiken'"
-                  className="w-full h-32 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                  className="w-full h-32 px-4 py-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
                   autoFocus
                 />
                 <p className="text-xs text-gray-500 mt-2">

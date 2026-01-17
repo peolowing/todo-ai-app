@@ -149,7 +149,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
           {task.description && (
             <div className="bg-gray-50 rounded-lg p-4">
               <h4 className="text-sm font-semibold text-gray-700 mb-2">Anteckningar</h4>
-              <p className="text-gray-700 whitespace-pre-wrap">{task.description}</p>
+              <p className="text-sm text-gray-700 whitespace-pre-wrap">{task.description}</p>
             </div>
           )}
 
@@ -157,14 +157,14 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
             {task.priority && (
               <div>
                 <h4 className="text-sm font-semibold text-gray-700 mb-1">Prioritet</h4>
-                <p className="text-gray-700">{priorityLabels[task.priority]}</p>
+                <p className="text-sm text-gray-700">{priorityLabels[task.priority]}</p>
               </div>
             )}
 
             {task.due_date && (
               <div>
                 <h4 className="text-sm font-semibold text-gray-700 mb-1">Deadline</h4>
-                <p className="text-gray-700">{format(new Date(task.due_date), 'd MMMM yyyy', { locale: sv })}</p>
+                <p className="text-sm text-gray-700">{format(new Date(task.due_date), 'd MMMM yyyy', { locale: sv })}</p>
               </div>
             )}
           </div>
@@ -173,14 +173,14 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
             {task.list_name && (
               <div>
                 <h4 className="text-sm font-semibold text-gray-700 mb-1">Lista</h4>
-                <p className="text-gray-700">{task.list_name}</p>
+                <p className="text-sm text-gray-700">{task.list_name}</p>
               </div>
             )}
 
             {task.category && (
               <div>
                 <h4 className="text-sm font-semibold text-gray-700 mb-1">Kategori</h4>
-                <p className="text-gray-700">{task.category}</p>
+                <p className="text-sm text-gray-700">{task.category}</p>
               </div>
             )}
           </div>
@@ -269,7 +269,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
               type="text"
               value={editData.title}
               onChange={(e) => handleChange('title', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -279,7 +279,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
               value={editData.description}
               onChange={(e) => handleChange('description', e.target.value)}
               rows={10}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
             />
           </div>
 
@@ -289,7 +289,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
               <select
                 value={editData.priority}
                 onChange={(e) => handleChange('priority', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="low">Låg</option>
                 <option value="medium">Medel</option>
@@ -303,7 +303,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
                 type="date"
                 value={editData.due_date}
                 onChange={(e) => handleChange('due_date', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -316,7 +316,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
                 value={editData.list_name}
                 onChange={(e) => handleChange('list_name', e.target.value)}
                 placeholder="T.ex. Projekt X"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             <div>
@@ -332,7 +332,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
                       handleChange('category', e.target.value)
                     }
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   {categories.filter(cat => cat !== 'all').map(category => (
                     <option key={category} value={category}>
@@ -348,7 +348,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
                     value={editData.category}
                     onChange={(e) => handleChange('category', e.target.value)}
                     placeholder="Skriv ny kategori"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     autoFocus
                   />
                   <button
