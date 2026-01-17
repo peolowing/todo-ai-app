@@ -1132,7 +1132,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                 onInput={handleEditorInput}
                 onKeyDown={handleEditorKeyDown}
                 suppressContentEditableWarning
-                className="flex-1 w-full border border-gray-200 border-t-0 rounded-b-lg p-4 focus:ring-2 focus:ring-blue-500 focus:outline-none overflow-y-auto font-sans"
+                className="flex-1 w-full border border-gray-200 border-t-0 rounded-b-lg p-4 focus:ring-0 focus:outline-none overflow-y-auto font-sans"
                 style={{
                   fontSize: fontSize,
                   minHeight: '300px'
