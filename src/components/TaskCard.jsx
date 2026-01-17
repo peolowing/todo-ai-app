@@ -100,13 +100,14 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
   if (showDetails && !isEditing) {
     return (
       <div
-        className="task-card"
+        className="task-card cursor-pointer"
+        onClick={() => setShowDetails(false)}
       >
         <div className="space-y-4">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-3 flex-1">
               <button
-                onClick={() => onToggle(task.id, !task.completed)}
+                onClick={(e) => { e.stopPropagation(); onToggle(task.id, !task.completed); }}
                 className={`mt-1 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 flex-shrink-0 ${
                   task.completed
                     ? 'bg-gradient-to-br from-green-500 to-emerald-600 border-green-500'
@@ -123,25 +124,18 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
             </div>
             <div className="flex items-center gap-1">
               <button
-                onClick={() => { setShowDetails(false); setIsEditing(true); }}
+                onClick={(e) => { e.stopPropagation(); setShowDetails(false); setIsEditing(true); }}
                 className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                 title="Redigera"
               >
                 <Edit2 className="w-4 h-4" />
               </button>
               <button
-                onClick={() => onDelete(task.id)}
+                onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
                 className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                 title="Ta bort"
               >
                 <Trash2 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setShowDetails(false)}
-                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
-                title="Stäng detaljer"
-              >
-                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -220,7 +214,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
                 {task.linkedNotes.map(note => (
                   <button
                     key={note.id}
-                    onClick={() => onNoteClick?.(note)}
+                    onClick={(e) => { e.stopPropagation(); onNoteClick?.(note); }}
                     className="text-sm text-gray-700 underline hover:text-blue-600 transition-colors"
                   >
                     {note.title}
@@ -421,7 +415,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
   return (
     <div
       className={`task-card ${task.completed ? 'opacity-60' : ''} cursor-pointer`}
-      onClick={() => setShowDetails(true)}
+      onClick={() => setShowDetails(!showDetails)}
     >
       <div className="flex items-start gap-3">
         <button

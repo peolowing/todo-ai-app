@@ -749,16 +749,16 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
               <button
                 onClick={() => setShowAIDropdown(!showAIDropdown)}
                 disabled={aiLoading}
-                className="px-3 py-1.5 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                className="px-2 py-1 text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
                 title="AI-funktioner"
               >
                 {aiLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3 h-3 animate-spin" />
                 ) : (
-                  <Sparkles className="w-4 h-4" />
+                  <Sparkles className="w-3 h-3" />
                 )}
                 AI
-                <ChevronDown className="w-3 h-3" />
+                <ChevronDown className="w-2.5 h-2.5" />
               </button>
 
               {/* Dropdown meny */}
@@ -902,13 +902,13 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                         <button
                           onClick={() => setShowAIDropdown(!showAIDropdown)}
                           disabled={aiLoading}
-                          className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 rounded-lg transition-colors disabled:opacity-50"
+                          className="p-1.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 rounded-lg transition-colors disabled:opacity-50"
                           title="AI-funktioner"
                         >
                           {aiLoading ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
+                            <Loader2 className="w-4 h-4 animate-spin" />
                           ) : (
-                            <Sparkles className="w-5 h-5" />
+                            <Sparkles className="w-4 h-4" />
                           )}
                         </button>
 
