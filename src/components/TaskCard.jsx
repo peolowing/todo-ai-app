@@ -12,14 +12,23 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
   const [showDetails, setShowDetails] = useState(false)
   const [showCustomCategory, setShowCustomCategory] = useState(false)
   const [showLinkModal, setShowLinkModal] = useState(false)
+  const [tagInput, setTagInput] = useState('')
   const [editData, setEditData] = useState({
     title: task.title,
     description: task.description || '',
     priority: task.priority,
     due_date: task.due_date ? task.due_date.split('T')[0] : '',
     list_name: task.list_name || '',
-    category: task.category || 'Allmänt'
+    category: task.category || 'Allmänt',
+    status: task.status || 'Ej startad',
+    tags: task.tags || []
   })
+
+  const statusLabels = {
+    'Ej startad': 'Ej startad',
+    'Pågående': 'Pågående',
+    'Slutförd': 'Slutförd'
+  }
 
   const { createLink, deleteLink } = useTaskNoteLinks()
 
@@ -33,6 +42,33 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
     high: 'Hög',
     medium: 'Medel',
     low: 'Låg'
+  }
+
+  // Funktion för att rendera text med klickbara länkar
+  function renderTextWithLinks(text) {
+    if (!text) return null
+
+    // Regex för att hitta URL:er
+    const urlRegex = /(https?:\/\/[^\s]+)/g
+    const parts = text.split(urlRegex)
+
+    return parts.map((part, index) => {
+      if (part.match(urlRegex)) {
+        return (
+          <a
+            key={index}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="text-blue-600 hover:underline break-all"
+          >
+            {part}
+          </a>
+        )
+      }
+      return part
+    })
   }
 
   // Listen for task to open from dashboard
@@ -59,7 +95,9 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
       priority: task.priority,
       due_date: task.due_date ? task.due_date.split('T')[0] : '',
       list_name: task.list_name || '',
-      category: task.category || 'Allmänt'
+      category: task.category || 'Allmänt',
+      status: task.status || 'Ej startad',
+      tags: task.tags || []
     })
   }
 
@@ -76,13 +114,36 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
         priority: editData.priority,
         due_date: editData.due_date || null,
         list_name: editData.list_name || null,
-        category: editData.category || 'Allmänt'
+        category: editData.category || 'Allmänt',
+        status: editData.status || 'Ej startad',
+        tags: editData.tags || []
       })
       setIsEditing(false)
       toast.success('Uppgift uppdaterad!')
     } catch (error) {
       toast.error('Kunde inte uppdatera uppgiften')
     }
+  }
+
+  function handleAddTag() {
+    const trimmedTag = tagInput.trim()
+    if (!trimmedTag) return
+    if (editData.tags.includes(trimmedTag)) {
+      toast.error('Taggen finns redan')
+      return
+    }
+    setEditData(prev => ({
+      ...prev,
+      tags: [...prev.tags, trimmedTag]
+    }))
+    setTagInput('')
+  }
+
+  function handleRemoveTag(tagToRemove) {
+    setEditData(prev => ({
+      ...prev,
+      tags: prev.tags.filter(tag => tag !== tagToRemove)
+    }))
   }
 
   function handleChange(field, value) {
@@ -143,17 +204,22 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
           {task.description && (
             <div className="bg-gray-50 rounded-lg p-4">
               <h4 className="text-sm font-semibold text-gray-700 mb-2">Anteckningar</h4>
-              <p className="text-sm text-gray-700 whitespace-pre-wrap">{task.description}</p>
+              <p className="text-sm text-gray-700 whitespace-pre-wrap">{renderTextWithLinks(task.description)}</p>
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             {task.priority && (
               <div>
                 <h4 className="text-sm font-semibold text-gray-700 mb-1">Prioritet</h4>
                 <p className="text-sm text-gray-700">{priorityLabels[task.priority]}</p>
               </div>
             )}
+
+            <div>
+              <h4 className="text-sm font-semibold text-gray-700 mb-1">Status</h4>
+              <p className="text-sm text-gray-700">{task.status || 'Ej startad'}</p>
+            </div>
 
             {task.due_date && (
               <div>
@@ -175,6 +241,22 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
               <div>
                 <h4 className="text-sm font-semibold text-gray-700 mb-1">Kategori</h4>
                 <p className="text-sm text-gray-700">{task.category}</p>
+              </div>
+            )}
+
+            {task.tags && task.tags.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-700 mb-1">Taggar</h4>
+                <div className="flex flex-wrap gap-2">
+                  {task.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -223,6 +305,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
               </div>
             </div>
           )}
+
         </div>
       </div>
     )
@@ -302,7 +385,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Lista</label>
               <input
@@ -312,6 +395,18 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
                 placeholder="T.ex. Projekt X"
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
+              <select
+                value={editData.status}
+                onChange={(e) => handleChange('status', e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="Ej startad">Ej startad</option>
+                <option value="Pågående">Pågående</option>
+                <option value="Slutförd">Slutförd</option>
+              </select>
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">Kategori</label>
@@ -356,6 +451,47 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
                 </div>
               )}
             </div>
+
+            {/* Taggar */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Taggar</label>
+              <div className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+                  placeholder="Lägg till tagg..."
+                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddTag}
+                  className="px-3 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Lägg till
+                </button>
+              </div>
+              {editData.tags && editData.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {editData.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTag(tag)}
+                        className="hover:text-blue-900"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Linked Notes Section in Edit Mode */}
@@ -397,6 +533,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
               <p className="text-xs text-gray-500 italic">Inga länkade anteckningar</p>
             )}
           </div>
+
         </div>
 
         <LinkModal
@@ -408,6 +545,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
           onUnlink={handleUnlinkNote}
           type="note"
         />
+
       </div>
     )
   }
@@ -444,7 +582,7 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
               </h3>
               
               {task.description && (
-                <p className="text-sm text-gray-600 mt-1">{task.description}</p>
+                <p className="text-sm text-gray-600 mt-1">{renderTextWithLinks(task.description)}</p>
               )}
 
               <div className="flex flex-wrap gap-2 mt-3">
@@ -453,6 +591,16 @@ export default function TaskCard({ task, onToggle, onDelete, onToggleSubtask, on
                     {task.list_name}
                   </span>
                 )}
+
+                <span className={`text-xs px-2 py-1 rounded-md font-medium ${
+                  (task.status || 'Ej startad') === 'Slutförd'
+                    ? 'bg-green-100 text-green-700'
+                    : (task.status || 'Ej startad') === 'Pågående'
+                      ? 'bg-yellow-100 text-yellow-700'
+                      : 'bg-gray-100 text-gray-700'
+                }`}>
+                  {task.status || 'Ej startad'}
+                </span>
 
                 {task.due_date && (
                   <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-md font-medium flex items-center gap-1">

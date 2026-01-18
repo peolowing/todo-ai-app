@@ -38,6 +38,7 @@ export default function App() {
   const [filter, setFilter] = useState('active') // all, active, completed - Default to active
   const [selectedList, setSelectedList] = useState(null)
   const [selectedCategory, setSelectedCategory] = useState('all') // Kategorifilter för uppgifter
+  const [selectedTaskTags, setSelectedTaskTags] = useState([]) // Taggfilter för uppgifter
   const [showAIModal, setShowAIModal] = useState(false)
   const [showTaskFormModal, setShowTaskFormModal] = useState(false)
   const [openMobileMenu, setOpenMobileMenu] = useState(null) // 'overview', 'filter', 'lists', 'categories', or null
@@ -195,13 +196,53 @@ export default function App() {
     return a.localeCompare(b)
   })
 
+  // Hämta taggar för en specifik kategori
+  function getTaskTagsForCategory(category) {
+    const categoryTasks = category === 'all'
+      ? tasks
+      : tasks.filter(t => (t.category || 'Allmänt') === category)
+
+    return [...new Set(categoryTasks.flatMap(task => task.tags || []))].sort()
+  }
+
+  // Toggla taggfilter
+  function toggleTaskTagFilter(tag) {
+    setSelectedTaskTags(prev => {
+      if (prev.includes(tag)) {
+        return prev.filter(t => t !== tag)
+      } else {
+        return [...prev, tag]
+      }
+    })
+  }
+
   const filteredTasks = tasks.filter(task => {
     if (selectedList && task.list_name !== selectedList) return false
     if (selectedCategory !== 'all' && (task.category || 'Allmänt') !== selectedCategory) return false
+
+    // Tag-filtrering: alla valda taggar måste finnas
+    if (selectedTaskTags.length > 0) {
+      const taskTags = task.tags || []
+      if (!selectedTaskTags.every(tag => taskTags.includes(tag))) return false
+    }
+
     if (filter === 'active') return !task.completed
     if (filter === 'completed') return task.completed
     return true
   })
+
+  // Hämta topp 3 kategorier i samma ordning som sidofältet (exklusive 'all')
+  const topCategories = categories
+    .filter(cat => cat !== 'all')
+    .slice(0, 3)
+
+  // Gruppera uppgifter efter kategori om "Alla kategorier" är vald
+  const groupedTasks = selectedCategory === 'all' && filter === 'active'
+    ? topCategories.map(cat => ({
+        category: cat,
+        tasks: filteredTasks.filter(t => (t.category || 'Allmänt') === cat)
+      })).filter(group => group.tasks.length > 0)
+    : null
 
   const todayTasks = filteredTasks.filter(task => {
     if (!task.due_date) return false
@@ -546,75 +587,107 @@ export default function App() {
                   const isFirst = !isAll && index === 1 // First non-'all' category
                   const isLast = !isAll && index === categories.length - 1
 
-                  // Räkna antal uppgifter i denna kategori
+                  // Räkna antal aktiva (icke-slutförda) uppgifter i denna kategori
+                  const activeTasks = tasks.filter(t => !t.completed)
                   const count = isAll
-                    ? tasks.length
-                    : tasks.filter(t => (t.category || 'Allmänt') === category).length
+                    ? activeTasks.length
+                    : activeTasks.filter(t => (t.category || 'Allmänt') === category).length
+
+                  const isActive = selectedCategory === category
+                  const categoryTags = getTaskTagsForCategory(category)
 
                   return (
-                    <div
-                      key={category}
-                      className={`flex items-center gap-1 rounded-lg transition-all ${
-                        selectedCategory === category
-                          ? 'bg-purple-50'
-                          : 'hover:bg-gray-50'
-                      }`}
-                    >
-                      <button
-                        onClick={() => setSelectedCategory(category)}
-                        className={`flex-1 text-left px-3 py-2 transition-all flex items-center gap-2 ${
-                          selectedCategory === category
-                            ? 'text-purple-700 font-medium'
-                            : 'text-gray-600'
+                    <div key={category} className="flex flex-col">
+                      <div
+                        className={`flex items-center gap-1 rounded-lg transition-all ${
+                          isActive
+                            ? 'bg-purple-50'
+                            : 'hover:bg-gray-50'
                         }`}
                       >
-                        <span className="flex-1 truncate">
-                          {category === 'all' ? 'Alla kategorier' : category}
-                        </span>
-                        <span className={`text-xs flex-shrink-0 ${
-                          selectedCategory === category
-                            ? 'text-purple-600'
-                            : 'text-gray-400'
-                        }`}>
-                          {count}
-                        </span>
-                      </button>
-                      <div className="flex flex-col w-6">
-                        {!isAll && (
-                          <>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                moveCategoryUp(category)
-                              }}
-                              disabled={isFirst}
-                              className={`p-0.5 rounded transition-colors ${
-                                isFirst
-                                  ? 'text-gray-300 cursor-not-allowed'
-                                  : 'text-gray-400 hover:text-purple-600 hover:bg-purple-100'
-                              }`}
-                              title="Flytta upp"
-                            >
-                              <ChevronUp className="w-3 h-3" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                moveCategoryDown(category)
-                              }}
-                              disabled={isLast}
-                              className={`p-0.5 rounded transition-colors ${
-                                isLast
-                                  ? 'text-gray-300 cursor-not-allowed'
-                                  : 'text-gray-400 hover:text-purple-600 hover:bg-purple-100'
-                              }`}
-                              title="Flytta ner"
-                            >
-                              <ChevronDown className="w-3 h-3" />
-                            </button>
-                          </>
-                        )}
+                        <button
+                          onClick={() => {
+                            setSelectedCategory(category)
+                            setSelectedTaskTags([]) // Rensa taggfilter när kategori byts
+                          }}
+                          className={`flex-1 text-left px-3 py-2 transition-all flex items-center gap-2 ${
+                            isActive
+                              ? 'text-purple-700 font-medium'
+                              : 'text-gray-600'
+                          }`}
+                        >
+                          <span className="flex-1 truncate">
+                            {category === 'all' ? 'Alla kategorier' : category}
+                          </span>
+                          <span className={`text-xs flex-shrink-0 ${
+                            isActive
+                              ? 'text-purple-600'
+                              : 'text-gray-400'
+                          }`}>
+                            {count}
+                          </span>
+                        </button>
+                        <div className="flex flex-col w-6">
+                          {!isAll && (
+                            <>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  moveCategoryUp(category)
+                                }}
+                                disabled={isFirst}
+                                className={`p-0.5 rounded transition-colors ${
+                                  isFirst
+                                    ? 'text-gray-300 cursor-not-allowed'
+                                    : 'text-gray-400 hover:text-purple-600 hover:bg-purple-100'
+                                }`}
+                                title="Flytta upp"
+                              >
+                                <ChevronUp className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  moveCategoryDown(category)
+                                }}
+                                disabled={isLast}
+                                className={`p-0.5 rounded transition-colors ${
+                                  isLast
+                                    ? 'text-gray-300 cursor-not-allowed'
+                                    : 'text-gray-400 hover:text-purple-600 hover:bg-purple-100'
+                                }`}
+                                title="Flytta ner"
+                              >
+                                <ChevronDown className="w-3 h-3" />
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
+
+                      {/* Taggar under kategorin - endast om kategorin är aktiv */}
+                      {isActive && categoryTags.length > 0 && (
+                        <div className="px-3 py-2 bg-gray-50/50 border-b border-gray-100">
+                          <div className="flex flex-wrap gap-1">
+                            {categoryTags.map(tag => {
+                              const isTagSelected = selectedTaskTags.includes(tag)
+                              return (
+                                <button
+                                  key={tag}
+                                  onClick={() => toggleTaskTagFilter(tag)}
+                                  className={`px-2 py-0.5 text-xs rounded-full transition-colors ${
+                                    isTagSelected
+                                      ? 'bg-purple-600 text-white'
+                                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                  }`}
+                                >
+                                  {tag}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )
                 })}
@@ -723,14 +796,6 @@ export default function App() {
           {/* Main Content */}
           <main className="lg:col-span-3">
             <div>
-              <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                <Calendar className="w-6 h-6 text-blue-600" />
-                {filter === 'all' && 'Alla uppgifter'}
-                {filter === 'active' && 'Aktiva uppgifter'}
-                {filter === 'completed' && 'Klara uppgifter'}
-                {selectedList && ` - ${selectedList}`}
-              </h2>
-
               {tasksLoading ? (
                 <div className="flex justify-center py-12">
                   <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
@@ -743,6 +808,38 @@ export default function App() {
                       ? 'Inga klara uppgifter än'
                       : 'Inga uppgifter hittades'}
                   </p>
+                </div>
+              ) : groupedTasks ? (
+                <div className="space-y-6">
+                  {groupedTasks.map(group => (
+                    <div key={group.category}>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-blue-500" />
+                        {group.category}
+                        <span className="text-xs text-gray-400 font-normal">({group.tasks.length})</span>
+                      </h3>
+                      <div className="space-y-3">
+                        {group.tasks.map(task => (
+                          <TaskCard
+                            key={task.id}
+                            task={task}
+                            onToggle={toggleTaskComplete}
+                            onDelete={deleteTask}
+                            onToggleSubtask={toggleSubtask}
+                            onUpdate={updateTask}
+                            categories={categories}
+                            taskToOpen={selectedTaskToOpen}
+                            onTaskOpened={() => setSelectedTaskToOpen(null)}
+                            allNotes={notes}
+                            onNoteClick={(note) => {
+                              setSelectedNoteToOpen(note)
+                              setActiveTab('notes')
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -783,6 +880,7 @@ export default function App() {
         onTaskCreated={handleTaskCreated}
         showModal={showTaskFormModal}
         onClose={() => setShowTaskFormModal(false)}
+        categories={categories}
       />
     </div>
   )

@@ -3,8 +3,9 @@ import { createPortal } from 'react-dom'
 import { Plus, X, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-export default function TaskForm({ onTaskCreated, showModal, onClose }) {
+export default function TaskForm({ onTaskCreated, showModal, onClose, categories = [] }) {
   const [loading, setLoading] = useState(false)
+  const [showCustomCategory, setShowCustomCategory] = useState(false)
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -12,9 +13,12 @@ export default function TaskForm({ onTaskCreated, showModal, onClose }) {
     due_date: '',
     list_name: '',
     category: 'Allmänt',
-    subtasks: []
+    status: 'Ej startad',
+    subtasks: [],
+    tags: []
   })
   const [subtaskInput, setSubtaskInput] = useState('')
+  const [tagInput, setTagInput] = useState('')
 
   function handleChange(e) {
     const { name, value } = e.target
@@ -41,6 +45,27 @@ export default function TaskForm({ onTaskCreated, showModal, onClose }) {
     }))
   }
 
+  function handleAddTag() {
+    const trimmedTag = tagInput.trim()
+    if (!trimmedTag) return
+    if (formData.tags.includes(trimmedTag)) {
+      toast.error('Taggen finns redan')
+      return
+    }
+    setFormData(prev => ({
+      ...prev,
+      tags: [...prev.tags, trimmedTag]
+    }))
+    setTagInput('')
+  }
+
+  function handleRemoveTag(tagToRemove) {
+    setFormData(prev => ({
+      ...prev,
+      tags: prev.tags.filter(tag => tag !== tagToRemove)
+    }))
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
 
@@ -58,7 +83,9 @@ export default function TaskForm({ onTaskCreated, showModal, onClose }) {
         due_date: formData.due_date || null,
         list_name: formData.list_name || null,
         category: formData.category || 'Allmänt',
-        subtasks: formData.subtasks
+        status: formData.status || 'Ej startad',
+        subtasks: formData.subtasks,
+        tags: formData.tags
       })
 
       // Reset form
@@ -69,8 +96,11 @@ export default function TaskForm({ onTaskCreated, showModal, onClose }) {
         due_date: '',
         list_name: '',
         category: 'Allmänt',
-        subtasks: []
+        status: 'Ej startad',
+        subtasks: [],
+        tags: []
       })
+      setShowCustomCategory(false)
       onClose()
       toast.success('Uppgift skapad!')
     } catch (error) {
@@ -140,7 +170,7 @@ export default function TaskForm({ onTaskCreated, showModal, onClose }) {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Priority */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -156,6 +186,24 @@ export default function TaskForm({ onTaskCreated, showModal, onClose }) {
               <option value="low">Låg</option>
               <option value="medium">Medium</option>
               <option value="high">Hög</option>
+            </select>
+          </div>
+
+          {/* Status */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Status
+            </label>
+            <select
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={loading}
+            >
+              <option value="Ej startad">Ej startad</option>
+              <option value="Pågående">Pågående</option>
+              <option value="Slutförd">Slutförd</option>
             </select>
           </div>
 
@@ -197,16 +245,100 @@ export default function TaskForm({ onTaskCreated, showModal, onClose }) {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Kategori
             </label>
+            {!showCustomCategory ? (
+              <select
+                name="category"
+                value={formData.category}
+                onChange={(e) => {
+                  if (e.target.value === '__custom__') {
+                    setShowCustomCategory(true)
+                    setFormData(prev => ({ ...prev, category: '' }))
+                  } else {
+                    handleChange(e)
+                  }
+                }}
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={loading}
+              >
+                {categories.filter(cat => cat !== 'all').map(category => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+                <option value="__custom__">+ Ny kategori</option>
+              </select>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  name="category"
+                  value={formData.category}
+                  onChange={handleChange}
+                  placeholder="Skriv ny kategori"
+                  className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={loading}
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCustomCategory(false)
+                    setFormData(prev => ({ ...prev, category: 'Allmänt' }))
+                  }}
+                  className="px-3 py-2 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg transition-colors"
+                  title="Tillbaka till dropdown"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Taggar */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Taggar
+          </label>
+          <div className="flex gap-2 mb-2">
             <input
               type="text"
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              placeholder="T.ex. Arbete, Privat, Shopping"
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+              placeholder="Lägg till tagg..."
+              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               disabled={loading}
             />
+            <button
+              type="button"
+              onClick={handleAddTag}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              disabled={loading}
+            >
+              Lägg till
+            </button>
           </div>
+          {formData.tags && formData.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {formData.tags.map((tag, index) => (
+                <span
+                  key={index}
+                  className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveTag(tag)}
+                    className="hover:text-blue-900"
+                    disabled={loading}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Subtasks */}

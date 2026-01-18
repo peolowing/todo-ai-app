@@ -10,8 +10,10 @@ import { useTaskNoteLinks } from '../hooks/useTaskNoteLinks'
 export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote, onCreateTask, triggerCreate, noteToOpen, onNoteOpened, allTasks = [], onTaskClick }) {
   const [selectedNote, setSelectedNote] = useState(null)
   const [isCreating, setIsCreating] = useState(false)
-  const [editData, setEditData] = useState({ title: '', content: '', category: 'Allmänt' })
+  const [editData, setEditData] = useState({ title: '', content: '', category: 'Allmänt', tags: [] })
   const [searchQuery, setSearchQuery] = useState('')
+  const [tagInput, setTagInput] = useState('')
+  const [selectedTags, setSelectedTags] = useState([]) // För filtrering
   const [aiLoading, setAiLoading] = useState(false)
   const [showTaskPreview, setShowTaskPreview] = useState(false)
   const [previewTasks, setPreviewTasks] = useState([])
@@ -43,9 +45,18 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    if (showAIDropdown) {
+      // Lägg till en liten fördröjning innan vi börjar lyssna för att undvika konflikt med öppningsklicket
+      const timeoutId = setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside)
+      }, 0)
+
+      return () => {
+        clearTimeout(timeoutId)
+        document.removeEventListener('mousedown', handleClickOutside)
+      }
+    }
+  }, [showAIDropdown])
 
   // Filtrera först baserat på sökning
   let filteredNotes = notes.filter(note =>
@@ -58,6 +69,23 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
     filteredNotes = filteredNotes.filter(note =>
       (note.category || 'Allmänt') === selectedCategory
     )
+  }
+
+  // Filtrera baserat på valda taggar
+  if (selectedTags.length > 0) {
+    filteredNotes = filteredNotes.filter(note => {
+      const noteTags = note.tags || []
+      return selectedTags.every(tag => noteTags.includes(tag))
+    })
+  }
+
+  // Hämta taggar per kategori
+  function getTagsForCategory(category) {
+    const categoryNotes = category === 'Alla'
+      ? notes
+      : notes.filter(n => (n.category || 'Allmänt') === category)
+
+    return [...new Set(categoryNotes.flatMap(note => note.tags || []))].sort()
   }
 
   // Hämta alla kategorier från alla anteckningar (inte bara filtrerade)
@@ -183,7 +211,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
     setIsCreating(true)
     setSelectedNote(null)
     setShowCustomCategory(false)
-    setEditData({ title: '', content: '', category: selectedCategory === 'Alla' ? 'Allmänt' : selectedCategory })
+    setEditData({ title: '', content: '', category: selectedCategory === 'Alla' ? 'Allmänt' : selectedCategory, tags: [] })
     setShowMobileEditor(true) // Visa editor i mobilvy
     // Focus på editor efter en kort fördröjning
     setTimeout(() => {
@@ -217,7 +245,8 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
     setEditData({
       title: note.title,
       content: note.content || '',
-      category: note.category || 'Allmänt'
+      category: note.category || 'Allmänt',
+      tags: note.tags || []
     })
     setShowMobileEditor(true) // Visa editor i mobilvy
     // Focus på editor efter en kort fördröjning
@@ -278,13 +307,46 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
       setEditData({
         title: selectedNote.title,
         content: selectedNote.content || '',
-        category: selectedNote.category || 'Allmänt'
+        category: selectedNote.category || 'Allmänt',
+        tags: selectedNote.tags || []
       })
     } else {
       setSelectedNote(null)
-      setEditData({ title: '', content: '', category: 'Allmänt' })
+      setEditData({ title: '', content: '', category: 'Allmänt', tags: [] })
       setShowMobileEditor(false) // Stäng mobilvy om vi avbryter
     }
+  }
+
+  // Hantera taggar
+  function handleAddTag() {
+    const trimmedTag = tagInput.trim()
+    if (!trimmedTag) return
+    if (editData.tags.includes(trimmedTag)) {
+      toast.error('Taggen finns redan')
+      return
+    }
+    setEditData(prev => ({
+      ...prev,
+      tags: [...prev.tags, trimmedTag]
+    }))
+    setTagInput('')
+  }
+
+  function handleRemoveTag(tagToRemove) {
+    setEditData(prev => ({
+      ...prev,
+      tags: prev.tags.filter(tag => tag !== tagToRemove)
+    }))
+  }
+
+  function toggleTagFilter(tag) {
+    setSelectedTags(prev => {
+      if (prev.includes(tag)) {
+        return prev.filter(t => t !== tag)
+      } else {
+        return [...prev, tag]
+      }
+    })
   }
 
   // Strukturera anteckningar
@@ -486,6 +548,31 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
     applyFormat('insertOrderedList')
   }
 
+  function handleInsertLink() {
+    const selection = window.getSelection()
+    const selectedText = selection?.toString() || ''
+
+    const url = prompt('Ange URL:', 'https://')
+    if (!url || url === 'https://') return
+
+    if (selectedText) {
+      // Om text är markerad, gör den till en länk
+      applyFormat('createLink', url)
+    } else {
+      // Om ingen text är markerad, infoga länken som text
+      const linkHtml = `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">${url}</a>`
+      document.execCommand('insertHTML', false, linkHtml)
+    }
+    editorRef.current?.focus()
+  }
+
+  // Konvertera URL:er till klickbara länkar automatiskt
+  function autoLinkUrls(html) {
+    // Regex för att hitta URL:er som inte redan är i en <a>-tagg
+    const urlRegex = /(?<!href="|">)(https?:\/\/[^\s<]+)/g
+    return html.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">$1</a>')
+  }
+
   function handleFontSizeChange(size) {
     setFontSize(size)
     if (editorRef.current) {
@@ -498,6 +585,17 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
     if (editorRef.current) {
       const htmlContent = editorRef.current.innerHTML
       setEditData(prev => ({ ...prev, content: htmlContent }))
+    }
+  }
+
+  // Hantera klick på länkar i editorn (Cmd/Ctrl+klick öppnar länken)
+  function handleEditorClick(event) {
+    if ((event.metaKey || event.ctrlKey) && event.target.tagName === 'A') {
+      event.preventDefault()
+      const href = event.target.getAttribute('href')
+      if (href) {
+        window.open(href, '_blank', 'noopener,noreferrer')
+      }
     }
   }
 
@@ -535,12 +633,18 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
       event.preventDefault()
       handleUnderline()
     }
+    // Ctrl/Cmd + K -> Insert Link
+    if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+      event.preventDefault()
+      handleInsertLink()
+    }
   }
 
   const isEditing = isCreating || (selectedNote && (
     editData.title !== selectedNote.title ||
     editData.content !== (selectedNote.content || '') ||
-    editData.category !== (selectedNote.category || 'Allmänt')
+    editData.category !== (selectedNote.category || 'Allmänt') ||
+    JSON.stringify(editData.tags) !== JSON.stringify(selectedNote.tags || [])
   ))
 
   return (
@@ -549,95 +653,122 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
       <div className={`flex flex-col gap-2 ${showMobileEditor ? 'hidden lg:flex' : 'flex'}`}>
         <div className="task-card flex-1 overflow-hidden flex flex-row gap-0">
           {/* Vertikala kategori-flikar till vänster - Visa alltid i desktop, i mobil bara när showMobileCategoryView är true */}
-          <div className={`w-44 border-r border-gray-200 py-2 flex-col gap-1 overflow-y-auto scrollbar-hide ${showMobileCategoryView ? 'flex' : 'hidden lg:flex'}`}>
+          <div className={`w-44 border-r border-gray-200 py-2 flex-col gap-0 overflow-y-auto scrollbar-hide ${showMobileCategoryView ? 'flex' : 'hidden lg:flex'}`}>
             {allCategories.map((category, index) => {
               const count = category === 'Alla'
                 ? notes.length
                 : notes.filter(n => (n.category || 'Allmänt') === category).length
 
+              const categoryTags = getTagsForCategory(category)
               const isActive = selectedCategory === category
               const isAlla = category === 'Alla'
               const isFirst = !isAlla && index === 1 // First non-'Alla' category
               const isLast = !isAlla && index === allCategories.length - 1
 
               return (
-                <div
-                  key={category}
-                  className={`relative flex items-center gap-1 transition-all group ${
-                    isActive
-                      ? 'bg-blue-50'
-                      : 'hover:bg-gray-50'
-                  }`}
-                >
-                  {/* Färgad indikator till vänster */}
-                  <div className={`absolute left-0 top-0 bottom-0 w-1 ${getCategoryColor(category)} ${
-                    isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'
-                  } transition-opacity`}></div>
-
-                  <button
-                    onClick={() => {
-                      setSelectedCategory(category)
-                      setShowMobileCategoryView(false) // Stäng kategoriöversikt i mobil
-                    }}
-                    className="flex-1 text-left px-3 py-2 transition-all flex items-center gap-2"
+                <div key={category} className="flex flex-col">
+                  <div
+                    className={`relative flex items-center gap-1 transition-all group ${
+                      isActive
+                        ? 'bg-blue-50'
+                        : 'hover:bg-gray-50'
+                    }`}
                   >
-                    {/* Färgad prick */}
-                    <div className={`w-3 h-3 flex-shrink-0 ${getCategoryColor(category)} rounded-full ${
-                      isActive ? 'ring-2 ring-blue-300' : ''
-                    }`}></div>
+                    {/* Färgad indikator till vänster */}
+                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${getCategoryColor(category)} ${
+                      isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-50'
+                    } transition-opacity`}></div>
 
-                    {/* Kategorinamn */}
-                    <span className={`text-sm flex-1 truncate ${
-                      isActive ? 'font-semibold text-gray-900' : 'text-gray-700'
-                    }`}>
-                      {category}
-                    </span>
+                    <button
+                      onClick={() => {
+                        setSelectedCategory(category)
+                        setSelectedTags([]) // Rensa taggfilter när kategori byts
+                        setShowMobileCategoryView(false) // Stäng kategoriöversikt i mobil
+                      }}
+                      className="flex-1 text-left px-3 py-2 transition-all flex items-center gap-2"
+                    >
+                      {/* Färgad prick */}
+                      <div className={`w-3 h-3 flex-shrink-0 ${getCategoryColor(category)} rounded-full ${
+                        isActive ? 'ring-2 ring-blue-300' : ''
+                      }`}></div>
 
-                    {/* Antal */}
-                    <span className={`text-xs flex-shrink-0 ${
-                      isActive ? 'text-gray-600' : 'text-gray-400'
-                    }`}>
-                      {count}
-                    </span>
-                  </button>
+                      {/* Kategorinamn */}
+                      <span className={`text-sm flex-1 truncate ${
+                        isActive ? 'font-semibold text-gray-900' : 'text-gray-700'
+                      }`}>
+                        {category}
+                      </span>
 
-                  {/* Upp/ner-knappar */}
-                  <div className="flex flex-col w-6">
-                    {!isAlla && (
-                      <>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            moveNoteCategoryUp(category)
-                          }}
-                          disabled={isFirst}
-                          className={`p-0.5 rounded transition-colors ${
-                            isFirst
-                              ? 'text-gray-300 cursor-not-allowed'
-                              : 'text-gray-400 hover:text-blue-600 hover:bg-blue-100'
-                          }`}
-                          title="Flytta upp"
-                        >
-                          <ChevronUp className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            moveNoteCategoryDown(category)
-                          }}
-                          disabled={isLast}
-                          className={`p-0.5 rounded transition-colors ${
-                            isLast
-                              ? 'text-gray-300 cursor-not-allowed'
-                              : 'text-gray-400 hover:text-blue-600 hover:bg-blue-100'
-                          }`}
-                          title="Flytta ner"
-                        >
-                          <ChevronDown className="w-3 h-3" />
-                        </button>
-                      </>
-                    )}
+                      {/* Antal */}
+                      <span className={`text-xs flex-shrink-0 ${
+                        isActive ? 'text-gray-600' : 'text-gray-400'
+                      }`}>
+                        {count}
+                      </span>
+                    </button>
+
+                    {/* Upp/ner-knappar */}
+                    <div className="flex flex-col w-6">
+                      {!isAlla && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              moveNoteCategoryUp(category)
+                            }}
+                            disabled={isFirst}
+                            className={`p-0.5 rounded transition-colors ${
+                              isFirst
+                                ? 'text-gray-300 cursor-not-allowed'
+                                : 'text-gray-400 hover:text-blue-600 hover:bg-blue-100'
+                            }`}
+                            title="Flytta upp"
+                          >
+                            <ChevronUp className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              moveNoteCategoryDown(category)
+                            }}
+                            disabled={isLast}
+                            className={`p-0.5 rounded transition-colors ${
+                              isLast
+                                ? 'text-gray-300 cursor-not-allowed'
+                                : 'text-gray-400 hover:text-blue-600 hover:bg-blue-100'
+                            }`}
+                            title="Flytta ner"
+                          >
+                            <ChevronDown className="w-3 h-3" />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Taggar under kategorin - endast om kategorin är aktiv */}
+                  {isActive && categoryTags.length > 0 && (
+                    <div className="px-3 py-2 bg-gray-50/50 border-b border-gray-100">
+                      <div className="flex flex-wrap gap-1">
+                        {categoryTags.map(tag => {
+                          const isTagSelected = selectedTags.includes(tag)
+                          return (
+                            <button
+                              key={tag}
+                              onClick={() => toggleTagFilter(tag)}
+                              className={`px-2 py-0.5 text-xs rounded-full transition-colors ${
+                                isTagSelected
+                                  ? 'bg-blue-600 text-white'
+                                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                              }`}
+                            >
+                              {tag}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )
             })}
@@ -659,7 +790,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                 </div>
               )}
 
-              <div className="relative">
+              <div className="relative mb-3">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
@@ -717,17 +848,17 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
             <>
               <button
                 onClick={handleSave}
-                className="p-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
+                className="p-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
                 title="Spara"
               >
-                <Save className="w-5 h-5" />
+                <Save className="w-4 h-4" />
               </button>
               <button
                 onClick={handleCancel}
-                className="p-2 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg transition-colors"
+                className="p-1.5 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg transition-colors"
                 title="Avbryt"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </>
           )}
@@ -736,10 +867,10 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
           {selectedNote && !isEditing && (
             <button
               onClick={() => handleDelete(selectedNote.id)}
-              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
               title="Ta bort"
             >
-              <Trash2 className="w-5 h-5" />
+              <Trash2 className="w-4 h-4" />
             </button>
           )}
 
@@ -764,10 +895,12 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
               {/* Dropdown meny */}
                 {showAIDropdown && !aiLoading && (
                   <div
-                    className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden"
+                    className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50"
+                    onMouseDown={(e) => e.stopPropagation()}
                   >
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation()
                         handleStructureNotes()
                         setShowAIDropdown(false)
                       }}
@@ -781,7 +914,8 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                     </button>
 
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation()
                         handleExtractTasks()
                         setShowAIDropdown(false)
                       }}
@@ -795,7 +929,8 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                     </button>
 
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation()
                         setShowCustomPrompt(true)
                         setShowAIDropdown(false)
                       }}
@@ -809,7 +944,8 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                     </button>
 
                     <button
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation()
                         fileInputRef.current?.click()
                         setShowAIDropdown(false)
                       }}
@@ -874,27 +1010,27 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                       <>
                         <button
                           onClick={handleSave}
-                          className="p-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
+                          className="p-1.5 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
                           title="Spara"
                         >
-                          <Save className="w-5 h-5" />
+                          <Save className="w-4 h-4" />
                         </button>
                         <button
                           onClick={handleCancel}
-                          className="p-2 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg transition-colors"
+                          className="p-1.5 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg transition-colors"
                           title="Avbryt"
                         >
-                          <X className="w-5 h-5" />
+                          <X className="w-4 h-4" />
                         </button>
                       </>
                     )}
                     {selectedNote && !isEditing && (
                       <button
                         onClick={() => handleDelete(selectedNote.id)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                         title="Ta bort"
                       >
-                        <Trash2 className="w-5 h-5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     )}
                     {editData.content.trim() && (
@@ -916,9 +1052,11 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                           {showAIDropdown && !aiLoading && (
                             <div
                               className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50"
+                              onMouseDown={(e) => e.stopPropagation()}
                             >
                               <button
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation()
                                   handleStructureNotes()
                                   setShowAIDropdown(false)
                                 }}
@@ -932,7 +1070,8 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                               </button>
 
                               <button
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation()
                                   handleExtractTasks()
                                   setShowAIDropdown(false)
                                 }}
@@ -946,7 +1085,8 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                               </button>
 
                               <button
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation()
                                   setShowCustomPrompt(true)
                                   setShowAIDropdown(false)
                                 }}
@@ -960,7 +1100,8 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                               </button>
 
                               <button
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation()
                                   fileInputRef.current?.click()
                                   setShowAIDropdown(false)
                                 }}
@@ -978,73 +1119,12 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <label className="text-sm font-medium text-gray-600">Kategori:</label>
-                  {!showCustomCategory ? (
-                    <select
-                      value={editData.category}
-                      onChange={(e) => {
-                        if (e.target.value === '__custom__') {
-                          setShowCustomCategory(true)
-                          setEditData(prev => ({ ...prev, category: '' }))
-                        } else {
-                          setEditData(prev => ({ ...prev, category: e.target.value }))
-                        }
-                      }}
-                      className="flex-1 text-sm px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      {allCategories.filter(cat => cat !== 'Alla').map(cat => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
-                      ))}
-                      <option value="__custom__">+ Ny kategori</option>
-                    </select>
-                  ) : (
-                    <div className="flex-1 flex gap-2">
-                      <input
-                        type="text"
-                        value={editData.category}
-                        onChange={(e) => setEditData(prev => ({ ...prev, category: e.target.value }))}
-                        placeholder="Skriv ny kategori"
-                        className="flex-1 text-sm px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        autoFocus
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowCustomCategory(false)}
-                        className="px-3 py-1.5 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg transition-colors"
-                        title="Tillbaka till dropdown"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
               </div>
 
               {selectedNote && !isCreating && (
                 <p className="text-xs text-gray-500 mb-4">
                   Senast uppdaterad: {format(new Date(selectedNote.updated_at), 'd MMMM yyyy, HH:mm', { locale: sv })}
                 </p>
-              )}
-
-              {/* Linked Tasks Section - Display when viewing note */}
-              {selectedNote && !isCreating && selectedNote.linkedTasks && selectedNote.linkedTasks.length > 0 && (
-                <div className="mb-3 pb-3 border-b border-gray-100">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-1">Länkade uppgifter</h4>
-                  <div className="flex flex-wrap gap-x-3 gap-y-1">
-                    {selectedNote.linkedTasks.map(task => (
-                      <button
-                        key={task.id}
-                        onClick={() => onTaskClick?.(task)}
-                        className="text-sm text-gray-700 underline hover:text-blue-600 transition-colors"
-                      >
-                        {task.title}
-                      </button>
-                    ))}
-                  </div>
-                </div>
               )}
 
               {/* Text Editor Toolbar */}
@@ -1118,10 +1198,22 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                   <ListOrdered className="w-4 h-4 text-gray-700" />
                 </button>
 
+                <div className="w-px h-6 bg-gray-300 mx-1"></div>
+
+                {/* Insert Link */}
+                <button
+                  type="button"
+                  onClick={handleInsertLink}
+                  className="p-1.5 hover:bg-gray-200 rounded transition-colors"
+                  title="Infoga länk (Ctrl+K)"
+                >
+                  <LinkIcon className="w-4 h-4 text-gray-700" />
+                </button>
+
                 <div className="flex-1"></div>
 
                 <p className="text-xs text-gray-500">
-                  Ctrl+D: Datum | Ctrl+B/I/U: Formatering
+                  Ctrl+K: Länk | Cmd+klick: Öppna
                 </p>
               </div>
 
@@ -1131,69 +1223,163 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
                 contentEditable
                 onInput={handleEditorInput}
                 onKeyDown={handleEditorKeyDown}
+                onClick={handleEditorClick}
                 suppressContentEditableWarning
                 className="flex-1 w-full border border-gray-200 border-t-0 rounded-b-lg p-4 focus:ring-0 focus:outline-none overflow-y-auto font-sans"
                 style={{
                   fontSize: fontSize,
                   minHeight: '300px'
                 }}
-                data-placeholder={isCreating ? "Skriv eller klistra in din text här...\n\nTips:\n• Tryck Ctrl/Cmd + D för att infoga dagens datum\n• AI kan strukturera texter och extrahera uppgifter\n• Ladda upp bilder för att extrahera text" : "Skriv dina anteckningar här...\n\nTryck Ctrl/Cmd + D för att infoga datum"}
+                data-placeholder={isCreating ? "Skriv eller klistra in din text här...\n\nTips:\n• Tryck Ctrl/Cmd + D för att infoga dagens datum\n• Cmd/Ctrl+klick på länk för att öppna\n• Ladda upp bilder för att extrahera text" : "Skriv dina anteckningar här...\n\nCtrl+K: Länk | Cmd/Ctrl+klick: Öppna länk"}
               />
 
-              {/* Linked Tasks Section - Show when editing */}
-              {(selectedNote || isCreating) && (
-                <div className="mt-4 border-t border-gray-200 pt-4">
-                  <button
-                    onClick={() => setShowLinkedTasks(!showLinkedTasks)}
-                    className="flex items-center justify-between w-full text-left mb-3 hover:text-blue-600 transition-colors"
-                  >
-                    <h4 className="text-xs font-medium text-gray-700">
-                      Länkade uppgifter ({selectedNote?.linkedTasks?.length || 0})
-                    </h4>
-                    {showLinkedTasks ? (
-                      <ChevronUp className="w-4 h-4 text-gray-500" />
-                    ) : (
-                      <ChevronDown className="w-4 h-4 text-gray-500" />
-                    )}
-                  </button>
+              {/* Metadata-sektion - Direkt under textfältet */}
+              <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-3">
 
-                  {showLinkedTasks && (
-                    <>
-                      {selectedNote && (
-                        <button
-                          onClick={() => setShowLinkModal(true)}
-                          className="mb-3 text-xs px-2 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
-                        >
-                          <LinkIcon className="w-3 h-3" />
-                          Länka
-                        </button>
-                      )}
-
-                      {selectedNote?.linkedTasks && selectedNote.linkedTasks.length > 0 ? (
-                        <div className="space-y-1.5">
-                          {selectedNote.linkedTasks.map(task => (
-                            <div key={task.id} className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded-lg group hover:bg-blue-100 transition-colors">
-                              <CheckSquare className="w-3 h-3 text-blue-600 flex-shrink-0" />
-                              <span className="flex-1 text-xs text-gray-700 font-medium truncate">
-                                {task.title}
-                              </span>
-                              <button
-                                onClick={() => handleUnlinkTask(task.id)}
-                                className="p-0.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-all"
-                                title="Ta bort länk"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-gray-500 italic">Inga länkade uppgifter</p>
-                      )}
-                    </>
+                {/* Kategori */}
+                <div>
+                  <label className="text-sm font-medium text-gray-600 mb-2 block">Kategori:</label>
+                  {!showCustomCategory ? (
+                    <select
+                      value={editData.category}
+                      onChange={(e) => {
+                        if (e.target.value === '__custom__') {
+                          setShowCustomCategory(true)
+                          setEditData(prev => ({ ...prev, category: '' }))
+                        } else {
+                          setEditData(prev => ({ ...prev, category: e.target.value }))
+                        }
+                      }}
+                      className="w-full text-sm px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                    >
+                      {allCategories.filter(cat => cat !== 'Alla').map(cat => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                      <option value="__custom__">+ Ny kategori</option>
+                    </select>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={editData.category}
+                        onChange={(e) => setEditData(prev => ({ ...prev, category: e.target.value }))}
+                        placeholder="Skriv ny kategori"
+                        className="flex-1 text-sm px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomCategory(false)}
+                        className="px-3 py-1.5 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded-lg transition-colors"
+                        title="Tillbaka till dropdown"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                   )}
                 </div>
-              )}
+
+                {/* Taggar */}
+                <div>
+                  <label className="text-sm font-medium text-gray-600 mb-2 block">Taggar:</label>
+                  <div className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+                      placeholder="Lägg till tagg..."
+                      className="flex-1 text-sm px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddTag}
+                      className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Lägg till
+                    </button>
+                  </div>
+                  {editData.tags && editData.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {editData.tags.map((tag, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full"
+                        >
+                          {tag}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveTag(tag)}
+                            className="hover:text-blue-900"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Länkade uppgifter */}
+                {(selectedNote || isCreating) && (
+                  <div>
+                    <button
+                      onClick={() => setShowLinkedTasks(!showLinkedTasks)}
+                      className="flex items-center justify-between w-full text-left mb-2 hover:text-blue-600 transition-colors"
+                    >
+                      <label className="text-sm font-medium text-gray-600 cursor-pointer">
+                        Länkade uppgifter ({selectedNote?.linkedTasks?.length || 0})
+                      </label>
+                      {showLinkedTasks ? (
+                        <ChevronUp className="w-4 h-4 text-gray-500" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-gray-500" />
+                      )}
+                    </button>
+
+                    {showLinkedTasks && (
+                      <>
+                        {selectedNote && (
+                          <button
+                            onClick={() => setShowLinkModal(true)}
+                            className="mb-2 text-xs px-2 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
+                          >
+                            <LinkIcon className="w-3 h-3" />
+                            Länka
+                          </button>
+                        )}
+
+                        {selectedNote?.linkedTasks && selectedNote.linkedTasks.length > 0 ? (
+                          <div className="space-y-1.5">
+                            {selectedNote.linkedTasks.map(task => (
+                              <div key={task.id} className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-200 rounded-lg group hover:bg-blue-100 transition-colors">
+                                <CheckSquare className="w-3 h-3 text-blue-600 flex-shrink-0" />
+                                <button
+                                  onClick={() => onTaskClick?.(task)}
+                                  className="flex-1 text-left text-xs text-gray-700 font-medium truncate hover:text-blue-600"
+                                >
+                                  {task.title}
+                                </button>
+                                <button
+                                  onClick={() => handleUnlinkTask(task.id)}
+                                  className="p-0.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-all"
+                                  title="Ta bort länk"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-500 italic">Inga länkade uppgifter</p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>
@@ -1210,6 +1396,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
             type="task"
           />
         )}
+
       </div>
 
       {/* Task Preview Modal */}
