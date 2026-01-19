@@ -265,7 +265,7 @@ export default function App() {
       
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl">
@@ -300,13 +300,13 @@ export default function App() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-4">
         {/* Tab Navigation */}
         <div className="mb-4 flex items-center justify-between gap-4 flex-wrap">
           <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 border border-gray-100 inline-flex gap-2">
             <button
               onClick={() => setActiveTab('dashboard')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all text-sm ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all text-xs sm:text-sm ${
                 activeTab === 'dashboard'
                   ? 'bg-blue-600 text-white'
                   : 'text-gray-600 hover:bg-gray-100'
@@ -317,7 +317,7 @@ export default function App() {
             </button>
             <button
               onClick={() => setActiveTab('tasks')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all text-sm ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all text-xs sm:text-sm ${
                 activeTab === 'tasks'
                   ? 'bg-blue-600 text-white'
                   : 'text-gray-600 hover:bg-gray-100'
@@ -328,7 +328,7 @@ export default function App() {
             </button>
             <button
               onClick={() => setActiveTab('notes')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all text-sm ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all text-xs sm:text-sm ${
                 activeTab === 'notes'
                   ? 'bg-blue-600 text-white'
                   : 'text-gray-600 hover:bg-gray-100'
