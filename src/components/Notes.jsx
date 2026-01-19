@@ -257,6 +257,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
 
   function handleBackToList() {
     setShowMobileEditor(false)
+    setShowMobileCategoryView(false) // Dölj kategorivy i mobil
     setSelectedNote(null)
     setIsCreating(false)
   }
