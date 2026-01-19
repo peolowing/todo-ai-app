@@ -114,9 +114,9 @@ export default function TaskForm({ onTaskCreated, showModal, onClose, categories
   if (!showModal) return null
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/50 flex items-start sm:items-center justify-center p-4 overflow-y-auto" style={{ zIndex: 99999 }}>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 overflow-y-auto" style={{ zIndex: 99999 }}>
       <div
-        className="bg-white rounded-xl shadow-2xl max-w-2xl w-full my-4 sm:my-8"
+        className="bg-white rounded-xl shadow-2xl max-w-2xl w-full my-4 sm:my-8 max-h-[90vh] overflow-y-auto"
       >
         <div className="p-6 border-b border-gray-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
