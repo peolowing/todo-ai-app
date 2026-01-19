@@ -305,7 +305,7 @@ export default function App() {
           <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 border border-gray-100 inline-flex gap-2">
             <button
               onClick={() => setActiveTab('dashboard')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all text-sm ${
                 activeTab === 'dashboard'
                   ? 'bg-blue-600 text-white'
                   : 'text-gray-600 hover:bg-gray-100'
@@ -316,7 +316,7 @@ export default function App() {
             </button>
             <button
               onClick={() => setActiveTab('tasks')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all text-sm ${
                 activeTab === 'tasks'
                   ? 'bg-blue-600 text-white'
                   : 'text-gray-600 hover:bg-gray-100'
@@ -327,7 +327,7 @@ export default function App() {
             </button>
             <button
               onClick={() => setActiveTab('notes')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all text-sm ${
                 activeTab === 'notes'
                   ? 'bg-blue-600 text-white'
                   : 'text-gray-600 hover:bg-gray-100'
