@@ -22,10 +22,10 @@ export default function Dashboard({
       : 0
   }
 
-  // Skapa 14-dagars kalenderdata
+  // Skapa kalenderdata: 7 dagar bakåt + idag + 14 dagar framåt = 22 dagar totalt
   const today = startOfDay(new Date())
-  const calendarDays = Array.from({ length: 14 }, (_, i) => {
-    const date = addDays(today, i)
+  const calendarDays = Array.from({ length: 22 }, (_, i) => {
+    const date = addDays(today, i - 7) // Börja 7 dagar före idag
     const dayTasks = tasks.filter(task => {
       if (!task.due_date) return false
       const dueDate = parseISO(task.due_date)
@@ -34,8 +34,8 @@ export default function Dashboard({
     return { date, tasks: dayTasks }
   })
 
-  // Hämta dagens uppgifter (för statistikwidget)
-  const todayTasks = calendarDays[0].tasks
+  // Hämta dagens uppgifter (för statistikwidget) - idag är index 7
+  const todayTasks = calendarDays[7].tasks
 
   // Hämta kommande deadlines (inom en vecka)
   const upcomingDeadlines = tasks
@@ -148,14 +148,14 @@ export default function Dashboard({
         </div>
       </div>
 
-      {/* 14-dagars kalender - Full bredd */}
+      {/* Kalender - Full bredd */}
       <div
         className="bg-white/80 backdrop-blur-sm rounded-xl p-5 border border-gray-100"
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
             <Calendar className="w-5 h-5 text-blue-600" />
-            Kommande 14 dagar
+            Kalender (7 dagar bakåt, 14 framåt)
           </h2>
           <button
             onClick={onViewAllTasks}
