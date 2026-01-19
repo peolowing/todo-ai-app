@@ -23,7 +23,7 @@ export default function Notes({ notes, onCreateNote, onUpdateNote, onDeleteNote,
   const [showAIDropdown, setShowAIDropdown] = useState(false) // För AI-dropdown
   const [showCustomPrompt, setShowCustomPrompt] = useState(false) // För egen prompt modal
   const [customPrompt, setCustomPrompt] = useState('') // Egen prompt text
-  const [fontSize, setFontSize] = useState('14px') // Font size state
+  const [fontSize, setFontSize] = useState('16px') // Font size state - 16px prevents iOS zoom
   const [showCustomCategory, setShowCustomCategory] = useState(false) // För att visa custom category input
   const [showLinkModal, setShowLinkModal] = useState(false) // För länkmodal
   const [showLinkedTasks, setShowLinkedTasks] = useState(false) // För att visa/dölja länkade uppgifter
