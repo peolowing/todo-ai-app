@@ -413,8 +413,8 @@ export default function App() {
         ) : (
           <>
             {/* Mobile Menu Bar */}
-            <div className="lg:hidden mb-4" ref={mobileMenuRef}>
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 border border-gray-100 flex gap-2 overflow-x-auto">
+            <div className="lg:hidden mb-4 pb-48">
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 border border-gray-100 flex gap-2 overflow-x-auto" style={{ overflowY: 'visible' }} ref={mobileMenuRef}>
                 {/* AI Uppgifter Button */}
                 <button
                   onClick={() => setShowAIModal(true)}
@@ -434,7 +434,7 @@ export default function App() {
                 </button>
 
                 {/* Filter Menu */}
-                <div className="relative static">
+                <div className="relative">
                   <button
                     onClick={() => setOpenMobileMenu(openMobileMenu === 'filter' ? null : 'filter')}
                     className="flex items-center gap-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all text-sm font-medium whitespace-nowrap"
@@ -444,7 +444,7 @@ export default function App() {
                     <ChevronDown className={`w-3 h-3 transition-transform ${openMobileMenu === 'filter' ? 'rotate-180' : ''}`} />
                   </button>
                   {openMobileMenu === 'filter' && (
-                    <div className="fixed mt-2 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px] z-[9999]" style={{ left: '1rem', right: 'auto' }}>
+                    <div className="absolute left-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px] z-[9999]">
                       <button
                         onClick={() => {
                           setFilter('all')
@@ -493,7 +493,7 @@ export default function App() {
 
                 {/* Lists Menu */}
                 {lists.length > 0 && (
-                  <div className="relative static">
+                  <div className="relative">
                     <button
                       onClick={() => setOpenMobileMenu(openMobileMenu === 'lists' ? null : 'lists')}
                       className="flex items-center gap-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all text-sm font-medium whitespace-nowrap"
@@ -503,7 +503,7 @@ export default function App() {
                       <ChevronDown className={`w-3 h-3 transition-transform ${openMobileMenu === 'lists' ? 'rotate-180' : ''}`} />
                     </button>
                     {openMobileMenu === 'lists' && (
-                      <div className="fixed mt-2 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px] z-[9999]" style={{ left: '1rem', right: 'auto' }}>
+                      <div className="absolute left-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px] z-[9999]">
                         <button
                           onClick={() => {
                             setSelectedList(null)
@@ -539,7 +539,7 @@ export default function App() {
                 )}
 
                 {/* Categories Menu */}
-                <div className="relative static">
+                <div className="relative">
                   <button
                     onClick={() => setOpenMobileMenu(openMobileMenu === 'categories' ? null : 'categories')}
                     className="flex items-center gap-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all text-sm font-medium whitespace-nowrap"
@@ -549,7 +549,7 @@ export default function App() {
                     <ChevronDown className={`w-3 h-3 transition-transform ${openMobileMenu === 'categories' ? 'rotate-180' : ''}`} />
                   </button>
                   {openMobileMenu === 'categories' && (
-                    <div className="fixed mt-2 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px] z-[9999]" style={{ left: '1rem', right: 'auto' }}>
+                    <div className="absolute left-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px] z-[9999]">
                       {categories.map(category => (
                         <button
                           key={category}
