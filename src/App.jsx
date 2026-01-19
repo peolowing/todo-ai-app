@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from './lib/supabase'
 import { useTasks } from './hooks/useTasks'
 import { useNotes } from './hooks/useNotes'
@@ -413,8 +414,8 @@ export default function App() {
         ) : (
           <>
             {/* Mobile Menu Bar */}
-            <div className="lg:hidden mb-4 pb-48">
-              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 border border-gray-100 flex gap-2 overflow-x-auto" style={{ overflowY: 'visible' }} ref={mobileMenuRef}>
+            <div className="lg:hidden mb-4">
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 border border-gray-100 flex gap-2 overflow-x-auto" ref={mobileMenuRef}>
                 {/* AI Uppgifter Button */}
                 <button
                   onClick={() => setShowAIModal(true)}
@@ -434,143 +435,169 @@ export default function App() {
                 </button>
 
                 {/* Filter Menu */}
-                <div className="relative">
-                  <button
-                    onClick={() => setOpenMobileMenu(openMobileMenu === 'filter' ? null : 'filter')}
-                    className="flex items-center gap-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all text-sm font-medium whitespace-nowrap"
-                  >
-                    <Filter className="w-4 h-4" />
-                    Filter
-                    <ChevronDown className={`w-3 h-3 transition-transform ${openMobileMenu === 'filter' ? 'rotate-180' : ''}`} />
-                  </button>
-                  {openMobileMenu === 'filter' && (
-                    <div className="absolute left-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px] z-[9999]">
-                      <button
-                        onClick={() => {
-                          setFilter('all')
-                          setOpenMobileMenu(null)
-                        }}
-                        className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-all ${
-                          filter === 'all'
-                            ? 'bg-blue-50 text-blue-700 font-medium'
-                            : 'text-gray-600 hover:bg-gray-50'
-                        }`}
-                      >
-                        <ListTodo className="w-4 h-4" />
-                        Alla uppgifter
-                      </button>
-                      <button
-                        onClick={() => {
-                          setFilter('active')
-                          setOpenMobileMenu(null)
-                        }}
-                        className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-all ${
-                          filter === 'active'
-                            ? 'bg-blue-50 text-blue-700 font-medium'
-                            : 'text-gray-600 hover:bg-gray-50'
-                        }`}
-                      >
-                        <Circle className="w-4 h-4" />
-                        Aktiva
-                      </button>
-                      <button
-                        onClick={() => {
-                          setFilter('completed')
-                          setOpenMobileMenu(null)
-                        }}
-                        className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-all ${
-                          filter === 'completed'
-                            ? 'bg-blue-50 text-blue-700 font-medium'
-                            : 'text-gray-600 hover:bg-gray-50'
-                        }`}
-                      >
-                        <CheckCircle2 className="w-4 h-4" />
-                        Klara
-                      </button>
-                    </div>
-                  )}
-                </div>
+                <button
+                  onClick={() => setOpenMobileMenu(openMobileMenu === 'filter' ? null : 'filter')}
+                  className="flex items-center gap-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all text-sm font-medium whitespace-nowrap"
+                >
+                  <Filter className="w-4 h-4" />
+                  Filter
+                  <ChevronDown className={`w-3 h-3 transition-transform ${openMobileMenu === 'filter' ? 'rotate-180' : ''}`} />
+                </button>
 
                 {/* Lists Menu */}
                 {lists.length > 0 && (
-                  <div className="relative">
-                    <button
-                      onClick={() => setOpenMobileMenu(openMobileMenu === 'lists' ? null : 'lists')}
-                      className="flex items-center gap-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all text-sm font-medium whitespace-nowrap"
-                    >
-                      <ListTodo className="w-4 h-4" />
-                      Listor
-                      <ChevronDown className={`w-3 h-3 transition-transform ${openMobileMenu === 'lists' ? 'rotate-180' : ''}`} />
-                    </button>
-                    {openMobileMenu === 'lists' && (
-                      <div className="absolute left-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px] z-[9999]">
-                        <button
-                          onClick={() => {
-                            setSelectedList(null)
-                            setOpenMobileMenu(null)
-                          }}
-                          className={`w-full text-left px-3 py-2 text-sm transition-all ${
-                            !selectedList
-                              ? 'bg-blue-50 text-blue-700 font-medium'
-                              : 'text-gray-600 hover:bg-gray-50'
-                          }`}
-                        >
-                          Alla listor
-                        </button>
-                        {lists.map(list => (
-                          <button
-                            key={list}
-                            onClick={() => {
-                              setSelectedList(list)
-                              setOpenMobileMenu(null)
-                            }}
-                            className={`w-full text-left px-3 py-2 text-sm transition-all ${
-                              selectedList === list
-                                ? 'bg-blue-50 text-blue-700 font-medium'
-                                : 'text-gray-600 hover:bg-gray-50'
-                            }`}
-                          >
-                            {list}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <button
+                    onClick={() => setOpenMobileMenu(openMobileMenu === 'lists' ? null : 'lists')}
+                    className="flex items-center gap-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all text-sm font-medium whitespace-nowrap"
+                  >
+                    <ListTodo className="w-4 h-4" />
+                    Listor
+                    <ChevronDown className={`w-3 h-3 transition-transform ${openMobileMenu === 'lists' ? 'rotate-180' : ''}`} />
+                  </button>
                 )}
 
                 {/* Categories Menu */}
-                <div className="relative">
-                  <button
-                    onClick={() => setOpenMobileMenu(openMobileMenu === 'categories' ? null : 'categories')}
-                    className="flex items-center gap-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all text-sm font-medium whitespace-nowrap"
-                  >
-                    <Layers className="w-4 h-4" />
-                    Kategorier
-                    <ChevronDown className={`w-3 h-3 transition-transform ${openMobileMenu === 'categories' ? 'rotate-180' : ''}`} />
-                  </button>
-                  {openMobileMenu === 'categories' && (
-                    <div className="absolute left-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 py-1 min-w-[160px] z-[9999]">
-                      {categories.map(category => (
-                        <button
-                          key={category}
-                          onClick={() => {
-                            setSelectedCategory(category)
-                            setOpenMobileMenu(null)
-                          }}
-                          className={`w-full text-left px-3 py-2 text-sm transition-all ${
-                            selectedCategory === category
-                              ? 'bg-purple-50 text-purple-700 font-medium'
-                              : 'text-gray-600 hover:bg-gray-50'
-                          }`}
-                        >
-                          {category === 'all' ? 'Alla kategorier' : category}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <button
+                  onClick={() => setOpenMobileMenu(openMobileMenu === 'categories' ? null : 'categories')}
+                  className="flex items-center gap-1 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-all text-sm font-medium whitespace-nowrap"
+                >
+                  <Layers className="w-4 h-4" />
+                  Kategorier
+                  <ChevronDown className={`w-3 h-3 transition-transform ${openMobileMenu === 'categories' ? 'rotate-180' : ''}`} />
+                </button>
               </div>
             </div>
+
+            {/* Mobile Dropdown Menus - Rendered as portals */}
+            {openMobileMenu === 'filter' && createPortal(
+              <div
+                className="fixed inset-0 bg-black/20 z-[9998] lg:hidden"
+                onClick={() => setOpenMobileMenu(null)}
+              >
+                <div
+                  className="absolute top-32 left-4 right-4 bg-white rounded-lg shadow-xl border border-gray-200 py-1 max-w-xs"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={() => {
+                      setFilter('all')
+                      setOpenMobileMenu(null)
+                    }}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-all ${
+                      filter === 'all'
+                        ? 'bg-blue-50 text-blue-700 font-medium'
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <ListTodo className="w-4 h-4" />
+                    Alla uppgifter
+                  </button>
+                  <button
+                    onClick={() => {
+                      setFilter('active')
+                      setOpenMobileMenu(null)
+                    }}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-all ${
+                      filter === 'active'
+                        ? 'bg-blue-50 text-blue-700 font-medium'
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Circle className="w-4 h-4" />
+                    Aktiva
+                  </button>
+                  <button
+                    onClick={() => {
+                      setFilter('completed')
+                      setOpenMobileMenu(null)
+                    }}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-all ${
+                      filter === 'completed'
+                        ? 'bg-blue-50 text-blue-700 font-medium'
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    Klara
+                  </button>
+                </div>
+              </div>,
+              document.body
+            )}
+
+            {openMobileMenu === 'lists' && createPortal(
+              <div
+                className="fixed inset-0 bg-black/20 z-[9998] lg:hidden"
+                onClick={() => setOpenMobileMenu(null)}
+              >
+                <div
+                  className="absolute top-32 left-4 right-4 bg-white rounded-lg shadow-xl border border-gray-200 py-1 max-w-xs"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={() => {
+                      setSelectedList(null)
+                      setOpenMobileMenu(null)
+                    }}
+                    className={`w-full text-left px-3 py-2 text-sm transition-all ${
+                      !selectedList
+                        ? 'bg-blue-50 text-blue-700 font-medium'
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    Alla listor
+                  </button>
+                  {lists.map(list => (
+                    <button
+                      key={list}
+                      onClick={() => {
+                        setSelectedList(list)
+                        setOpenMobileMenu(null)
+                      }}
+                      className={`w-full text-left px-3 py-2 text-sm transition-all ${
+                        selectedList === list
+                          ? 'bg-blue-50 text-blue-700 font-medium'
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {list}
+                    </button>
+                  ))}
+                </div>
+              </div>,
+              document.body
+            )}
+
+            {openMobileMenu === 'categories' && createPortal(
+              <div
+                className="fixed inset-0 bg-black/20 z-[9998] lg:hidden"
+                onClick={() => setOpenMobileMenu(null)}
+              >
+                <div
+                  className="absolute top-32 left-4 right-4 bg-white rounded-lg shadow-xl border border-gray-200 py-1 max-w-xs"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {categories.map(category => (
+                    <button
+                      key={category}
+                      onClick={() => {
+                        setSelectedCategory(category)
+                        setSelectedTaskTags([])
+                        setOpenMobileMenu(null)
+                      }}
+                      className={`w-full text-left px-3 py-2 text-sm transition-all ${
+                        selectedCategory === category
+                          ? 'bg-purple-50 text-purple-700 font-medium'
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {category === 'all' ? 'Alla kategorier' : category}
+                    </button>
+                  ))}
+                </div>
+              </div>,
+              document.body
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
             {/* Sidebar - Hidden on mobile */}
