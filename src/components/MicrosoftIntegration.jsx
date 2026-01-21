@@ -70,14 +70,26 @@ export default function MicrosoftIntegration({ user }) {
     }
 
     try {
+      // Verifiera att användaren är inloggad i Supabase
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        console.warn('No Supabase session found')
+        setConnectionStatus(status)
+        return
+      }
+
       // Kontrollera om token finns i Supabase
       const { data: tokenData, error: tokenError } = await supabase
         .from('microsoft_tokens')
         .select('*')
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle()
 
-      if (tokenData && !tokenError) {
+      if (tokenError) {
+        console.error('Token query error:', tokenError)
+      }
+
+      if (tokenData) {
         status.tokenSaved = true
         status.tokenExpires = new Date(tokenData.expires_at).toLocaleString('sv-SE')
       }
@@ -87,18 +99,24 @@ export default function MicrosoftIntegration({ user }) {
         .from('microsoft_subscriptions')
         .select('*')
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle()
 
-      if (subData && !subError) {
+      if (subError) {
+        console.error('Subscription query error:', subError)
+      }
+
+      if (subData) {
         const expirationDate = new Date(subData.expiration_date_time)
         status.subscription = expirationDate > new Date()
         status.subscriptionExpires = expirationDate.toLocaleString('sv-SE')
+        setSubscriptionActive(status.subscription)
       }
 
       setConnectionStatus(status)
       setDebugInfo(status)
     } catch (error) {
       console.error('Error checking connection status:', error)
+      setConnectionStatus(status)
     }
   }
 
@@ -108,9 +126,14 @@ export default function MicrosoftIntegration({ user }) {
         .from('microsoft_subscriptions')
         .select('*')
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle()
 
-      if (data && !error) {
+      if (error) {
+        console.error('Subscription status error:', error)
+        return
+      }
+
+      if (data) {
         const expirationDate = new Date(data.expiration_date_time)
         if (expirationDate > new Date()) {
           setSubscriptionActive(true)
