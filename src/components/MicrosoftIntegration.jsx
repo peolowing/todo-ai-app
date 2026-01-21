@@ -206,12 +206,18 @@ export default function MicrosoftIntegration({ user }) {
       await saveToken(accessToken, loginResponse)
       console.log('✅ Token saved to Supabase')
 
-      // Skapa webhook subscription
-      await createSubscription(accessToken)
-      console.log('✅ Webhook subscription created')
+      // Försök skapa webhook subscription (ignorera fel om det misslyckas)
+      try {
+        await createSubscription(accessToken)
+        console.log('✅ Webhook subscription created')
+        setSubscriptionActive(true)
+      } catch (webhookError) {
+        console.warn('Webhook subscription failed (detta är OK):', webhookError)
+        setSubscriptionActive(false)
+        // Fortsätt ändå - manuell synk fungerar utan webhooks
+      }
 
-      toast.success('Microsoft Outlook ansluten!')
-      setSubscriptionActive(true)
+      toast.success('Microsoft Outlook ansluten! Använd "Synka nu" för att hämta flaggade mail.')
 
       // Uppdatera status
       await checkConnectionStatus()
