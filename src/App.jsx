@@ -286,6 +286,7 @@ export default function App() {
                 onImportTasks={createTask}
                 onImportNotes={createNote}
                 userId={user?.id}
+                user={user}
               />
 
               <button
