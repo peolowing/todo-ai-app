@@ -205,28 +205,46 @@ export default function MicrosoftIntegration({ user }) {
 
   async function handleMicrosoftLogout() {
     try {
-      // Ta bort subscription
-      await removeSubscription()
-
-      // Logga ut från Microsoft (använd redirect)
-      const account = accounts[0]
-      if (account) {
-        await instance.logoutRedirect({
-          account,
-          postLogoutRedirectUri: window.location.origin
-        })
+      // Ta bort subscription (ignorera fel om den inte finns)
+      try {
+        await removeSubscription()
+      } catch (subError) {
+        console.log('Subscription removal error (ignoring):', subError)
       }
 
+      // Ta bort token från Supabase
+      try {
+        await supabase
+          .from('microsoft_tokens')
+          .delete()
+          .eq('user_id', user.id)
+      } catch (tokenError) {
+        console.log('Token removal error (ignoring):', tokenError)
+      }
+
+      // Uppdatera state före redirect
       setSubscriptionActive(false)
       setConnectionStatus({
         msAuth: false,
         tokenSaved: false,
         subscription: false
       })
+
       toast.success('Microsoft Outlook frånkopplad')
+
+      // Logga ut från Microsoft (använd redirect)
+      const account = accounts[0]
+      if (account) {
+        // Vänta lite så användaren ser toast-meddelandet
+        await new Promise(resolve => setTimeout(resolve, 500))
+        await instance.logoutRedirect({
+          account,
+          postLogoutRedirectUri: window.location.origin
+        })
+      }
     } catch (error) {
       console.error('Logout error:', error)
-      toast.error('Fel vid frånkoppling')
+      toast.error('Fel vid frånkoppling: ' + error.message)
     }
   }
 
