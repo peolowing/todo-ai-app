@@ -398,13 +398,6 @@ export default function MicrosoftIntegration({ user }) {
     }
   }
 
-  // Debug logging
-  console.log('MicrosoftIntegration render:', {
-    isMsAuthenticated,
-    accountsLength: accounts.length,
-    hasUser: !!user
-  })
-
   return (
     <div className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-100">
       <div className="flex items-start justify-between mb-4">
