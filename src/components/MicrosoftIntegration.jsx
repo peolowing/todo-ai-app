@@ -222,7 +222,20 @@ export default function MicrosoftIntegration({ user }) {
         console.log('Token removal error (ignoring):', tokenError)
       }
 
-      // Uppdatera state före redirect
+      // Logga ut från Microsoft lokalt (utan redirect till Microsoft)
+      const account = accounts[0]
+      if (account) {
+        // Använd logout utan redirect - rensar bara lokal cache
+        await instance.logoutPopup({
+          account,
+          mainWindowRedirectUri: window.location.origin
+        }).catch(() => {
+          // Om popup misslyckas, rensa bara lokalt
+          instance.setActiveAccount(null)
+        })
+      }
+
+      // Uppdatera state
       setSubscriptionActive(false)
       setConnectionStatus({
         msAuth: false,
@@ -231,17 +244,6 @@ export default function MicrosoftIntegration({ user }) {
       })
 
       toast.success('Microsoft Outlook frånkopplad')
-
-      // Logga ut från Microsoft (använd redirect)
-      const account = accounts[0]
-      if (account) {
-        // Vänta lite så användaren ser toast-meddelandet
-        await new Promise(resolve => setTimeout(resolve, 500))
-        await instance.logoutRedirect({
-          account,
-          postLogoutRedirectUri: window.location.origin
-        })
-      }
     } catch (error) {
       console.error('Logout error:', error)
       toast.error('Fel vid frånkoppling: ' + error.message)
