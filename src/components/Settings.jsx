@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Settings as SettingsIcon, ChevronDown } from 'lucide-react'
 import ImportExport from './ImportExport'
 import MicrosoftIntegration from './MicrosoftIntegration'
@@ -63,20 +64,34 @@ export default function Settings({ tasks, notes, onImportTasks, onImportNotes, u
       </div>
 
       {/* Microsoft Integration Modal */}
-      {showMicrosoftModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <MicrosoftIntegration user={user} />
-              <button
-                onClick={() => setShowMicrosoftModal(false)}
-                className="mt-4 w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-              >
-                Stäng
-              </button>
+      {showMicrosoftModal && createPortal(
+        <div
+          className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 overflow-y-auto"
+          style={{ zIndex: 999999 }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowMicrosoftModal(false)
+            }
+          }}
+        >
+          <div className="min-h-screen px-4 py-8 flex items-center justify-center">
+            <div
+              className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-4 sm:p-6">
+                <MicrosoftIntegration user={user} />
+                <button
+                  onClick={() => setShowMicrosoftModal(false)}
+                  className="mt-4 w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                >
+                  Stäng
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Backup Modal - Controlled from here */}
