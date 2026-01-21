@@ -19,16 +19,39 @@ serve(async (req) => {
       throw new Error('Missing accessToken or userId')
     }
 
-    // Skapa Supabase client (URL och Key är automatiskt tillgängliga i Edge Functions)
+    // Hämta JWT token från Authorization header för att verifiera användaren
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      throw new Error('Missing authorization header')
+    }
+
+    // Skapa Supabase client med Service Role Key för att bypassa RLS
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    // Skapa Supabase client med user token för att verifiera användaren
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
+          headers: { Authorization: authHeader },
         },
       }
     )
+
+    // Verifiera att användaren är autentiserad
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
+    if (authError || !user) {
+      throw new Error('Unauthorized')
+    }
+
+    // Verifiera att userId matchar den autentiserade användaren
+    if (user.id !== userId) {
+      throw new Error('User ID mismatch')
+    }
 
     // Notification URL måste vara publikt tillgänglig
     // För production: använd din Supabase Edge Function URL
@@ -62,8 +85,8 @@ serve(async (req) => {
 
     const subscription = await subscriptionResponse.json()
 
-    // Spara subscription i Supabase
-    const { error: dbError } = await supabaseClient
+    // Spara subscription i Supabase med admin client (bypassa RLS)
+    const { error: dbError } = await supabaseAdmin
       .from('microsoft_subscriptions')
       .upsert({
         user_id: userId,

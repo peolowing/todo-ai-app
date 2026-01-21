@@ -268,10 +268,15 @@ export default function MicrosoftIntegration({ user }) {
 
   async function createSubscription(accessToken) {
     // Anropa Supabase Edge Function för att skapa subscription
+    const { data: { session } } = await supabase.auth.getSession()
+
     const { data, error } = await supabase.functions.invoke('create-ms-subscription', {
       body: {
         accessToken,
         userId: user.id
+      },
+      headers: {
+        Authorization: `Bearer ${session?.access_token}`
       }
     })
 
@@ -280,8 +285,13 @@ export default function MicrosoftIntegration({ user }) {
   }
 
   async function removeSubscription() {
+    const { data: { session } } = await supabase.auth.getSession()
+
     const { error } = await supabase.functions.invoke('remove-ms-subscription', {
-      body: { userId: user.id }
+      body: { userId: user.id },
+      headers: {
+        Authorization: `Bearer ${session?.access_token}`
+      }
     })
 
     if (error) throw error
