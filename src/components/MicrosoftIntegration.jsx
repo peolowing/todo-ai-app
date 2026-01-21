@@ -211,13 +211,13 @@ export default function MicrosoftIntegration({ user }) {
         await createSubscription(accessToken)
         console.log('✅ Webhook subscription created')
         setSubscriptionActive(true)
+        toast.success('Microsoft Outlook ansluten! Nya flaggade mail synkas automatiskt.')
       } catch (webhookError) {
         console.warn('Webhook subscription failed (detta är OK):', webhookError)
         setSubscriptionActive(false)
+        toast.success('Microsoft Outlook ansluten! Använd "Synka nu" för att hämta flaggade mail.')
         // Fortsätt ändå - manuell synk fungerar utan webhooks
       }
-
-      toast.success('Microsoft Outlook ansluten! Använd "Synka nu" för att hämta flaggade mail.')
 
       // Uppdatera status
       await checkConnectionStatus()

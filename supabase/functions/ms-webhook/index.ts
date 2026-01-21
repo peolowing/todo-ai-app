@@ -118,7 +118,7 @@ serve(async (req) => {
             title: `📧 ${email.subject}`,
             description: email.bodyPreview || '',
             priority: 'medium',
-            category: 'Email',
+            category: 'Emails',
             completed: false,
           })
           .select()
