@@ -3,13 +3,22 @@
  * Konfigurerar MSAL för Microsoft Graph integration
  */
 
+// Dynamisk redirect URI baserad på miljö
+const getRedirectUri = () => {
+  if (import.meta.env.VITE_MS_REDIRECT_URI) {
+    return import.meta.env.VITE_MS_REDIRECT_URI
+  }
+  // Fallback till current origin (fungerar både lokalt och i produktion)
+  return typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001'
+}
+
 export const msalConfig = {
   auth: {
     clientId: import.meta.env.VITE_MS_CLIENT_ID || '2f527d59-6740-4c86-9d75-1a1a7d4590d3',
     authority: `https://login.microsoftonline.com/${import.meta.env.VITE_MS_TENANT_ID || '52607fdf-0d52-432d-9c87-602bcfd101b5'}`,
-    redirectUri: import.meta.env.VITE_MS_REDIRECT_URI || 'http://localhost:3001',
+    redirectUri: getRedirectUri(),
     navigateToLoginRequestUrl: false,
-    postLogoutRedirectUri: import.meta.env.VITE_MS_REDIRECT_URI || 'http://localhost:3001'
+    postLogoutRedirectUri: getRedirectUri()
   },
   cache: {
     cacheLocation: 'localStorage', // Använd localStorage för persistent login
