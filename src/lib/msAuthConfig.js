@@ -7,9 +7,9 @@ export const msalConfig = {
   auth: {
     clientId: import.meta.env.VITE_MS_CLIENT_ID || '2f527d59-6740-4c86-9d75-1a1a7d4590d3',
     authority: `https://login.microsoftonline.com/${import.meta.env.VITE_MS_TENANT_ID || '52607fdf-0d52-432d-9c87-602bcfd101b5'}`,
-    redirectUri: import.meta.env.VITE_MS_REDIRECT_URI || 'https://zkpqndfuwthiyzgyjwim.supabase.co',
+    redirectUri: import.meta.env.VITE_MS_REDIRECT_URI || 'https://zkpqndfuwthiyzgyjwim.supabase.co/functions/v1/ms-webhook',
     navigateToLoginRequestUrl: false,
-    postLogoutRedirectUri: import.meta.env.VITE_MS_REDIRECT_URI || 'https://zkpqndfuwthiyzgyjwim.supabase.co'
+    postLogoutRedirectUri: import.meta.env.VITE_MS_REDIRECT_URI || 'https://zkpqndfuwthiyzgyjwim.supabase.co/functions/v1/ms-webhook'
   },
   cache: {
     cacheLocation: 'localStorage', // Använd localStorage för persistent login
