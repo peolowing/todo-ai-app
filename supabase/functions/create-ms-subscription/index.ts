@@ -19,7 +19,7 @@ serve(async (req) => {
       throw new Error('Missing accessToken or userId')
     }
 
-    // Skapa Supabase client
+    // Skapa Supabase client (URL och Key är automatiskt tillgängliga i Edge Functions)
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',

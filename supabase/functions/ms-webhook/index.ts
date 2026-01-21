@@ -32,9 +32,11 @@ serve(async (req) => {
     console.log('Received notifications:', notifications.length)
 
     // Skapa Supabase client med service role (för att accessa alla users)
+    // SUPABASE_URL och SUPABASE_ANON_KEY finns automatiskt i Edge Functions
+    // SERVICE_ROLE_KEY måste sättas manuellt
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
     for (const notification of notifications) {
