@@ -59,6 +59,19 @@ serve(async (req) => {
     const notificationUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/ms-webhook`
 
     // Skapa subscription via Microsoft Graph
+    // Max giltighetstid för mail subscriptions är 4230 minuter (ca 3 dagar)
+    const expirationDateTime = new Date(Date.now() + (4230 * 60 * 1000)).toISOString()
+
+    const subscriptionBody = {
+      changeType: 'created',
+      notificationUrl,
+      resource: "me/mailFolders('Inbox')/messages",
+      expirationDateTime,
+      clientState: crypto.randomUUID(),
+    }
+
+    console.log('Creating subscription with:', JSON.stringify(subscriptionBody, null, 2))
+
     const subscriptionResponse = await fetch(
       'https://graph.microsoft.com/v1.0/subscriptions',
       {
@@ -67,19 +80,14 @@ serve(async (req) => {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          changeType: 'created',
-          notificationUrl,
-          resource: "me/mailFolders('Inbox')/messages",
-          expirationDateTime: new Date(Date.now() + 3600000).toISOString(), // 1 timme
-          clientState: crypto.randomUUID(),
-        }),
+        body: JSON.stringify(subscriptionBody),
       }
     )
 
     if (!subscriptionResponse.ok) {
       const error = await subscriptionResponse.text()
-      console.error('Microsoft Graph error:', error)
+      console.error('Microsoft Graph subscription error:', error)
+      console.error('Subscription body was:', JSON.stringify(subscriptionBody, null, 2))
       throw new Error(`Failed to create subscription: ${error}`)
     }
 
