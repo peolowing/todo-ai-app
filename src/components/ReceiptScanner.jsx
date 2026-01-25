@@ -14,6 +14,7 @@ export default function ReceiptScanner({ user }) {
   const [newListName, setNewListName] = useState('')
   const [showNewListInput, setShowNewListInput] = useState(false)
   const [selectedList, setSelectedList] = useState('all')
+  const [selectedReceipts, setSelectedReceipts] = useState([])
   const [formData, setFormData] = useState({
     date: '',
     amount: '',
@@ -262,16 +263,81 @@ export default function ReceiptScanner({ user }) {
     setIsEditing(true)
   }
 
+  function toggleReceiptSelection(receiptId) {
+    setSelectedReceipts(prev => {
+      if (prev.includes(receiptId)) {
+        return prev.filter(id => id !== receiptId)
+      } else {
+        return [...prev, receiptId]
+      }
+    })
+  }
+
+  function selectAllReceipts() {
+    const filteredIds = receipts
+      .filter(receipt => {
+        if (selectedList === 'all') return true
+        if (selectedList === 'no-list') return !receipt.list_name
+        return receipt.list_name === selectedList
+      })
+      .map(r => r.id)
+    setSelectedReceipts(filteredIds)
+  }
+
+  function deselectAllReceipts() {
+    setSelectedReceipts([])
+  }
+
+  // Gruppera kvitton per månad
+  function groupReceiptsByMonth(receiptsToGroup) {
+    const groups = {}
+    receiptsToGroup.forEach(receipt => {
+      const monthKey = receipt.date.substring(0, 7) // YYYY-MM
+      if (!groups[monthKey]) {
+        groups[monthKey] = []
+      }
+      groups[monthKey].push(receipt)
+    })
+
+    // Sortera månader i fallande ordning (nyaste först)
+    const sortedMonths = Object.keys(groups).sort((a, b) => b.localeCompare(a))
+
+    return sortedMonths.map(month => ({
+      month,
+      receipts: groups[month],
+      total: groups[month].reduce((sum, r) => sum + parseFloat(r.amount), 0),
+      vatTotal: groups[month].reduce((sum, r) => sum + (parseFloat(r.vat_amount) || 0), 0),
+      tipTotal: groups[month].reduce((sum, r) => sum + (parseFloat(r.tip_amount) || 0), 0)
+    }))
+  }
+
+  // Formatera månadsnamn (YYYY-MM -> "Januari 2024")
+  function formatMonthName(monthKey) {
+    const [year, month] = monthKey.split('-')
+    const monthNames = ['Januari', 'Februari', 'Mars', 'April', 'Maj', 'Juni',
+                        'Juli', 'Augusti', 'September', 'Oktober', 'November', 'December']
+    return `${monthNames[parseInt(month) - 1]} ${year}`
+  }
+
   async function exportToCSV() {
-    // Filtrera kvitton baserat på vald lista
-    const filteredReceipts = selectedList === 'all'
-      ? receipts
-      : receipts.filter(r => r.list_name === selectedList || (!r.list_name && selectedList === 'no-list'))
+    // Exportera endast valda kvitton, eller alla om inga är valda
+    const receiptsToExport = selectedReceipts.length > 0
+      ? receipts.filter(r => selectedReceipts.includes(r.id))
+      : receipts.filter(receipt => {
+          if (selectedList === 'all') return true
+          if (selectedList === 'no-list') return !receipt.list_name
+          return receipt.list_name === selectedList
+        })
+
+    if (receiptsToExport.length === 0) {
+      toast.error('Inga kvitton att exportera')
+      return
+    }
 
     try {
       const csv = [
         ['Datum', 'Belopp', 'Moms', 'Momssats', 'Dricks', 'Leverantör', 'Org.nr', 'Kategori', 'Beskrivning', 'Lista'].join(';'),
-        ...filteredReceipts.map(r => [
+        ...receiptsToExport.map(r => [
           r.date,
           r.amount,
           r.vat_amount || '',
@@ -291,7 +357,8 @@ export default function ReceiptScanner({ user }) {
       link.download = `kvitton_${new Date().toISOString().split('T')[0]}.csv`
       link.click()
 
-      toast.success('CSV exporterad!')
+      toast.success(`${receiptsToExport.length} kvitton exporterade!`)
+      setSelectedReceipts([]) // Rensa urval efter export
     } catch (error) {
       console.error('Export error:', error)
       toast.error('Kunde inte exportera')
@@ -303,13 +370,22 @@ export default function ReceiptScanner({ user }) {
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-gray-800">Kvittoscanning</h2>
         {receipts.length > 0 && (
-          <button
-            onClick={exportToCSV}
-            className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
-          >
-            <Download className="w-4 h-4" />
-            Exportera CSV
-          </button>
+          <div className="flex items-center gap-2">
+            {selectedReceipts.length > 0 && (
+              <span className="text-sm text-gray-600">
+                {selectedReceipts.length} valda
+              </span>
+            )}
+            <button
+              onClick={exportToCSV}
+              className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+            >
+              <Download className="w-4 h-4" />
+              {selectedReceipts.length > 0
+                ? `Exportera ${selectedReceipts.length} st`
+                : 'Exportera CSV'}
+            </button>
+          </div>
         )}
       </div>
 
@@ -779,82 +855,136 @@ export default function ReceiptScanner({ user }) {
       {/* Receipt list */}
       {receipts.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-gray-700">
-            Sparade kvitton ({
-              selectedList === 'all'
-                ? receipts.length
-                : selectedList === 'no-list'
-                ? receipts.filter(r => !r.list_name).length
-                : receipts.filter(r => r.list_name === selectedList).length
-            })
-          </h3>
-          <div className="space-y-2">
-            {receipts
-              .filter(receipt => {
-                if (selectedList === 'all') return true
-                if (selectedList === 'no-list') return !receipt.list_name
-                return receipt.list_name === selectedList
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-700">
+              Sparade kvitton ({
+                selectedList === 'all'
+                  ? receipts.length
+                  : selectedList === 'no-list'
+                  ? receipts.filter(r => !r.list_name).length
+                  : receipts.filter(r => r.list_name === selectedList).length
               })
-              .map(receipt => (
-              <div
-                key={receipt.id}
-                className="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow"
+            </h3>
+            <div className="flex gap-2">
+              <button
+                onClick={selectAllReceipts}
+                className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
               >
-                <div className="flex gap-3">
-                  <img
-                    src={receipt.image_url}
-                    alt="Kvitto"
-                    className="w-20 h-20 object-cover rounded cursor-pointer"
-                    onClick={() => window.open(receipt.image_url, '_blank')}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 truncate">{receipt.vendor_name}</p>
-                        <p className="text-sm text-gray-600">{receipt.date}</p>
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm text-gray-500">{receipt.category}</p>
-                          {receipt.list_name && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                              {receipt.list_name}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-gray-900">{receipt.amount} kr</p>
-                        {receipt.vat_amount && (
-                          <p className="text-sm text-gray-600">Moms: {receipt.vat_amount} kr</p>
-                        )}
-                        {receipt.tip_amount && (
-                          <p className="text-sm text-gray-600">Dricks: {receipt.tip_amount} kr</p>
-                        )}
-                      </div>
-                    </div>
-                    {receipt.description && (
-                      <p className="text-sm text-gray-600 mt-1 line-clamp-2">{receipt.description}</p>
+                Välj alla
+              </button>
+              {selectedReceipts.length > 0 && (
+                <button
+                  onClick={deselectAllReceipts}
+                  className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
+                >
+                  Avmarkera alla
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Gruppera och visa kvitton per månad */}
+          {groupReceiptsByMonth(
+            receipts.filter(receipt => {
+              if (selectedList === 'all') return true
+              if (selectedList === 'no-list') return !receipt.list_name
+              return receipt.list_name === selectedList
+            })
+          ).map(({ month, receipts: monthReceipts, total, vatTotal, tipTotal }) => (
+            <div key={month} className="space-y-2">
+              {/* Månadsrubrik */}
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold text-gray-800">{formatMonthName(month)}</h4>
+                  <div className="text-sm text-gray-600">
+                    <span className="font-medium">{monthReceipts.length} kvitton</span>
+                    <span className="mx-2">•</span>
+                    <span className="font-bold text-gray-900">{total.toFixed(2)} kr</span>
+                    {vatTotal > 0 && (
+                      <span className="text-xs ml-2">(moms: {vatTotal.toFixed(2)} kr)</span>
                     )}
-                    <div className="flex gap-2 mt-2">
-                      <button
-                        onClick={() => handleEdit(receipt)}
-                        className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
-                      >
-                        <Edit2 className="w-3 h-3" />
-                        Redigera
-                      </button>
-                      <button
-                        onClick={() => handleDelete(receipt)}
-                        className="flex items-center gap-1 px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                        Radera
-                      </button>
-                    </div>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
+
+              {/* Kvitton för denna månad */}
+              <div className="space-y-2">
+                {monthReceipts.map(receipt => (
+                  <div
+                    key={receipt.id}
+                    className={`bg-white border rounded-lg p-3 transition-all ${
+                      selectedReceipts.includes(receipt.id)
+                        ? 'border-blue-500 shadow-md'
+                        : 'border-gray-200 hover:shadow-md'
+                    }`}
+                  >
+                    <div className="flex gap-3">
+                      {/* Checkbox */}
+                      <div className="flex items-start pt-1">
+                        <input
+                          type="checkbox"
+                          checked={selectedReceipts.includes(receipt.id)}
+                          onChange={() => toggleReceiptSelection(receipt.id)}
+                          className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </div>
+
+                      <img
+                        src={receipt.image_url}
+                        alt="Kvitto"
+                        className="w-20 h-20 object-cover rounded cursor-pointer"
+                        onClick={() => window.open(receipt.image_url, '_blank')}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-gray-900 truncate">{receipt.vendor_name}</p>
+                            <p className="text-sm text-gray-600">{receipt.date}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm text-gray-500">{receipt.category}</p>
+                              {receipt.list_name && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                  {receipt.list_name}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-gray-900">{receipt.amount} kr</p>
+                            {receipt.vat_amount && (
+                              <p className="text-sm text-gray-600">Moms: {receipt.vat_amount} kr</p>
+                            )}
+                            {receipt.tip_amount && (
+                              <p className="text-sm text-gray-600">Dricks: {receipt.tip_amount} kr</p>
+                            )}
+                          </div>
+                        </div>
+                        {receipt.description && (
+                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">{receipt.description}</p>
+                        )}
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            onClick={() => handleEdit(receipt)}
+                            className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                            Redigera
+                          </button>
+                          <button
+                            onClick={() => handleDelete(receipt)}
+                            className="flex items-center gap-1 px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            Radera
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
