@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Settings as SettingsIcon, ChevronDown } from 'lucide-react'
 import ImportExport from './ImportExport'
-import MicrosoftIntegration from './MicrosoftIntegration'
+import MicrosoftIntegrationWrapper from './MicrosoftIntegrationWrapper'
 
 export default function Settings({ tasks, notes, onImportTasks, onImportNotes, userId, user }) {
   const [showMenu, setShowMenu] = useState(false)
@@ -80,7 +80,7 @@ export default function Settings({ tasks, notes, onImportTasks, onImportNotes, u
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-4 sm:p-6">
-                <MicrosoftIntegration user={user} />
+                <MicrosoftIntegrationWrapper user={user} />
                 <button
                   onClick={() => setShowMicrosoftModal(false)}
                   className="mt-4 w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
