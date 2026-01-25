@@ -10,10 +10,7 @@ import TaskCard from './components/TaskCard'
 import Notes from './components/Notes'
 import Dashboard from './components/Dashboard'
 import Settings from './components/Settings'
-import { Toaster, toast } from 'react-hot-toast'
-import { graphConfig } from './lib/msAuthConfig'
-import { useMsal } from '@azure/msal-react'
-import { loginRequest } from './lib/msAuthConfig'
+import { Toaster } from 'react-hot-toast'
 import {
   LogOut,
   Calendar,
@@ -30,9 +27,7 @@ import {
   BarChart3,
   Layers,
   ChevronUp,
-  ChevronsUpDown,
-  Mail,
-  RefreshCw
+  ChevronsUpDown
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { sv } from 'date-fns/locale'
@@ -55,9 +50,7 @@ export default function App() {
     const saved = localStorage.getItem('categoryOrder')
     return saved ? JSON.parse(saved) : []
   })
-  const [isSyncingMail, setIsSyncingMail] = useState(false)
   const mobileMenuRef = useRef(null)
-  const { instance, accounts } = useMsal()
 
   const {
     tasks,
@@ -157,97 +150,6 @@ export default function App() {
         list_name: task.list || null,
         subtasks: task.subtasks || []
       })
-    }
-  }
-
-  async function syncOutlookMail() {
-    if (!user || !accounts || accounts.length === 0) {
-      toast.error('Microsoft Outlook inte anslutet')
-      return
-    }
-
-    setIsSyncingMail(true)
-    try {
-      const account = accounts[0]
-      const silentRequest = {
-        ...loginRequest,
-        account
-      }
-
-      const response = await instance.acquireTokenSilent(silentRequest)
-
-      // Hämta flaggade mail
-      const mailResponse = await fetch(
-        `${graphConfig.graphMailEndpoint}?$filter=flag/flagStatus eq 'flagged'&$select=id,subject,bodyPreview,from,webLink,receivedDateTime&$top=20`,
-        {
-          headers: {
-            Authorization: `Bearer ${response.accessToken}`
-          }
-        }
-      )
-
-      if (!mailResponse.ok) throw new Error('Kunde inte hämta mail')
-
-      const mailData = await mailResponse.json()
-      const emails = mailData.value || []
-
-      // Skapa tasks från mail
-      let createdCount = 0
-      for (const email of emails) {
-        // Kontrollera om mail redan är synkat
-        const { data: existingSync } = await supabase
-          .from('synced_emails')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('email_id', email.id)
-          .single()
-
-        if (!existingSync) {
-          // Skapa task
-          const { data: task, error: taskError } = await supabase
-            .from('tasks')
-            .insert({
-              user_id: user.id,
-              title: `📧 ${email.subject}`,
-              description: email.bodyPreview,
-              priority: 'medium',
-              category: 'Emails',
-              completed: false
-            })
-            .select()
-            .single()
-
-          if (!taskError && task) {
-            // Logga synk
-            await supabase
-              .from('synced_emails')
-              .insert({
-                user_id: user.id,
-                task_id: task.id,
-                email_id: email.id,
-                email_subject: email.subject,
-                email_from: email.from?.emailAddress?.address
-              })
-
-            createdCount++
-          }
-        }
-      }
-
-      if (createdCount > 0) {
-        toast.success(`${createdCount} nya mail synkade!`)
-      } else {
-        toast.success('Inga nya flaggade mail')
-      }
-    } catch (error) {
-      console.error('Sync error:', error)
-      if (error.errorCode === 'login_required' || error.errorCode === 'interaction_required') {
-        toast.error('Logga in på Microsoft Outlook igen via Inställningar')
-      } else {
-        toast.error('Synkningsfel: ' + error.message)
-      }
-    } finally {
-      setIsSyncingMail(false)
     }
   }
 
@@ -442,19 +344,6 @@ export default function App() {
           {activeTab === 'tasks' && (
             <div className="hidden lg:flex gap-2">
               <button
-                onClick={syncOutlookMail}
-                disabled={isSyncingMail || !accounts || accounts.length === 0}
-                className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Synka flaggade mail från Outlook"
-              >
-                {isSyncingMail ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Mail className="w-4 h-4" />
-                )}
-                <span className="hidden sm:inline">Synka mail</span>
-              </button>
-              <button
                 onClick={() => setShowAIModal(true)}
                 className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-all text-sm font-medium"
                 title="AI Uppgiftsskapare"
@@ -528,20 +417,6 @@ export default function App() {
             {/* Mobile Menu Bar */}
             <div className="lg:hidden mb-4">
               <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 border border-gray-100 flex gap-2 overflow-x-auto" ref={mobileMenuRef}>
-                {/* Synka Mail Button */}
-                <button
-                  onClick={syncOutlookMail}
-                  disabled={isSyncingMail || !accounts || accounts.length === 0}
-                  className="flex items-center gap-1 px-3 py-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all text-sm font-medium whitespace-nowrap disabled:opacity-50"
-                >
-                  {isSyncingMail ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Mail className="w-4 h-4" />
-                  )}
-                  Mail
-                </button>
-
                 {/* AI Uppgifter Button */}
                 <button
                   onClick={() => setShowAIModal(true)}
