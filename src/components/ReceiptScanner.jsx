@@ -10,6 +10,10 @@ export default function ReceiptScanner({ user }) {
   const [showForm, setShowForm] = useState(false)
   const [selectedReceipt, setSelectedReceipt] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
+  const [lists, setLists] = useState([])
+  const [newListName, setNewListName] = useState('')
+  const [showNewListInput, setShowNewListInput] = useState(false)
+  const [selectedList, setSelectedList] = useState('all')
   const [formData, setFormData] = useState({
     date: '',
     amount: '',
@@ -18,7 +22,8 @@ export default function ReceiptScanner({ user }) {
     vendorName: '',
     orgNumber: '',
     category: 'Material',
-    description: ''
+    description: '',
+    listName: ''
   })
   const [imagePreview, setImagePreview] = useState(null)
   const [imageFile, setImageFile] = useState(null)
@@ -42,6 +47,10 @@ export default function ReceiptScanner({ user }) {
 
       if (error) throw error
       setReceipts(data || [])
+
+      // Extrahera unika listor
+      const uniqueLists = [...new Set(data?.map(r => r.list_name).filter(Boolean))]
+      setLists(uniqueLists)
     } catch (error) {
       console.error('Error loading receipts:', error)
       toast.error('Kunde inte ladda kvitton')
@@ -135,7 +144,8 @@ export default function ReceiptScanner({ user }) {
           vendor_name: formData.vendorName,
           org_number: formData.orgNumber || null,
           category: formData.category,
-          description: formData.description || null
+          description: formData.description || null,
+          list_name: formData.listName || null
         })
         .select()
         .single()
@@ -143,7 +153,7 @@ export default function ReceiptScanner({ user }) {
       if (error) throw error
 
       toast.success('Kvitto sparat!')
-      setReceipts([data, ...receipts])
+      await loadReceipts() // Ladda om för att uppdatera listor
       handleCancel()
     } catch (error) {
       console.error('Save error:', error)
@@ -194,7 +204,8 @@ export default function ReceiptScanner({ user }) {
           vendor_name: formData.vendorName,
           org_number: formData.orgNumber || null,
           category: formData.category,
-          description: formData.description || null
+          description: formData.description || null,
+          list_name: formData.listName || null
         })
         .eq('id', selectedReceipt.id)
 
@@ -213,6 +224,8 @@ export default function ReceiptScanner({ user }) {
     setShowForm(false)
     setImagePreview(null)
     setImageFile(null)
+    setNewListName('')
+    setShowNewListInput(false)
     setFormData({
       date: '',
       amount: '',
@@ -221,7 +234,8 @@ export default function ReceiptScanner({ user }) {
       vendorName: '',
       orgNumber: '',
       category: 'Material',
-      description: ''
+      description: '',
+      listName: ''
     })
   }
 
@@ -235,16 +249,22 @@ export default function ReceiptScanner({ user }) {
       vendorName: receipt.vendor_name,
       orgNumber: receipt.org_number || '',
       category: receipt.category,
-      description: receipt.description || ''
+      description: receipt.description || '',
+      listName: receipt.list_name || ''
     })
     setIsEditing(true)
   }
 
   async function exportToCSV() {
+    // Filtrera kvitton baserat på vald lista
+    const filteredReceipts = selectedList === 'all'
+      ? receipts
+      : receipts.filter(r => r.list_name === selectedList || (!r.list_name && selectedList === 'no-list'))
+
     try {
       const csv = [
-        ['Datum', 'Belopp', 'Moms', 'Momssats', 'Leverantör', 'Org.nr', 'Kategori', 'Beskrivning'].join(';'),
-        ...receipts.map(r => [
+        ['Datum', 'Belopp', 'Moms', 'Momssats', 'Leverantör', 'Org.nr', 'Kategori', 'Beskrivning', 'Lista'].join(';'),
+        ...filteredReceipts.map(r => [
           r.date,
           r.amount,
           r.vat_amount || '',
@@ -252,7 +272,8 @@ export default function ReceiptScanner({ user }) {
           r.vendor_name,
           r.org_number || '',
           r.category,
-          r.description || ''
+          r.description || '',
+          r.list_name || ''
         ].join(';'))
       ].join('\n')
 
@@ -417,6 +438,56 @@ export default function ReceiptScanner({ user }) {
             </div>
 
             <div className="sm:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Lista (valfritt)</label>
+              <div className="flex gap-2">
+                {showNewListInput ? (
+                  <>
+                    <input
+                      type="text"
+                      value={newListName}
+                      onChange={(e) => setNewListName(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Ny lista..."
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' && newListName.trim()) {
+                          setFormData({ ...formData, listName: newListName.trim() })
+                          setLists([...lists, newListName.trim()])
+                          setNewListName('')
+                          setShowNewListInput(false)
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={() => setShowNewListInput(false)}
+                      className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                    >
+                      Avbryt
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <select
+                      value={formData.listName}
+                      onChange={(e) => setFormData({ ...formData, listName: e.target.value })}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">Ingen lista</option>
+                      {lists.map(list => (
+                        <option key={list} value={list}>{list}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => setShowNewListInput(true)}
+                      className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+                    >
+                      + Ny lista
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Beskrivning</label>
               <textarea
                 value={formData.description}
@@ -552,6 +623,56 @@ export default function ReceiptScanner({ user }) {
               </div>
 
               <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Lista (valfritt)</label>
+                <div className="flex gap-2">
+                  {showNewListInput ? (
+                    <>
+                      <input
+                        type="text"
+                        value={newListName}
+                        onChange={(e) => setNewListName(e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Ny lista..."
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter' && newListName.trim()) {
+                            setFormData({ ...formData, listName: newListName.trim() })
+                            setLists([...lists, newListName.trim()])
+                            setNewListName('')
+                            setShowNewListInput(false)
+                          }
+                        }}
+                      />
+                      <button
+                        onClick={() => setShowNewListInput(false)}
+                        className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                      >
+                        Avbryt
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <select
+                        value={formData.listName}
+                        onChange={(e) => setFormData({ ...formData, listName: e.target.value })}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">Ingen lista</option>
+                        {lists.map(list => (
+                          <option key={list} value={list}>{list}</option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => setShowNewListInput(true)}
+                        className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
+                      >
+                        + Ny lista
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="sm:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Beskrivning</label>
                 <textarea
                   value={formData.description}
@@ -581,12 +702,68 @@ export default function ReceiptScanner({ user }) {
         </div>
       )}
 
+      {/* List filter */}
+      {lists.length > 0 && receipts.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-lg p-3">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Filtrera på lista</label>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setSelectedList('all')}
+              className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                selectedList === 'all'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Alla ({receipts.length})
+            </button>
+            <button
+              onClick={() => setSelectedList('no-list')}
+              className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                selectedList === 'no-list'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Utan lista ({receipts.filter(r => !r.list_name).length})
+            </button>
+            {lists.map(list => (
+              <button
+                key={list}
+                onClick={() => setSelectedList(list)}
+                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                  selectedList === list
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {list} ({receipts.filter(r => r.list_name === list).length})
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Receipt list */}
       {receipts.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-gray-700">Sparade kvitton ({receipts.length})</h3>
+          <h3 className="text-sm font-semibold text-gray-700">
+            Sparade kvitton ({
+              selectedList === 'all'
+                ? receipts.length
+                : selectedList === 'no-list'
+                ? receipts.filter(r => !r.list_name).length
+                : receipts.filter(r => r.list_name === selectedList).length
+            })
+          </h3>
           <div className="space-y-2">
-            {receipts.map(receipt => (
+            {receipts
+              .filter(receipt => {
+                if (selectedList === 'all') return true
+                if (selectedList === 'no-list') return !receipt.list_name
+                return receipt.list_name === selectedList
+              })
+              .map(receipt => (
               <div
                 key={receipt.id}
                 className="bg-white border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow"
@@ -603,7 +780,14 @@ export default function ReceiptScanner({ user }) {
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-gray-900 truncate">{receipt.vendor_name}</p>
                         <p className="text-sm text-gray-600">{receipt.date}</p>
-                        <p className="text-sm text-gray-500">{receipt.category}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm text-gray-500">{receipt.category}</p>
+                          {receipt.list_name && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                              {receipt.list_name}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-gray-900">{receipt.amount} kr</p>
