@@ -161,7 +161,7 @@ export default function App() {
   }
 
   async function syncOutlookMail() {
-    if (!user || accounts.length === 0) {
+    if (!user || !accounts || accounts.length === 0) {
       toast.error('Microsoft Outlook inte anslutet')
       return
     }
@@ -443,7 +443,7 @@ export default function App() {
             <div className="hidden lg:flex gap-2">
               <button
                 onClick={syncOutlookMail}
-                disabled={isSyncingMail || accounts.length === 0}
+                disabled={isSyncingMail || !accounts || accounts.length === 0}
                 className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Synka flaggade mail från Outlook"
               >
@@ -531,7 +531,7 @@ export default function App() {
                 {/* Synka Mail Button */}
                 <button
                   onClick={syncOutlookMail}
-                  disabled={isSyncingMail || accounts.length === 0}
+                  disabled={isSyncingMail || !accounts || accounts.length === 0}
                   className="flex items-center gap-1 px-3 py-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all text-sm font-medium whitespace-nowrap disabled:opacity-50"
                 >
                   {isSyncingMail ? (
