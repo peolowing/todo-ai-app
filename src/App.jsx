@@ -397,21 +397,36 @@ export default function App() {
             onViewAllNotes={() => setActiveTab('notes')}
           />
         ) : activeTab === 'notes' ? (
-          <Notes
-            notes={notes}
-            onCreateNote={createNote}
-            onUpdateNote={updateNote}
-            onDeleteNote={deleteNote}
-            onCreateTask={createTask}
-            triggerCreate={triggerNoteCreate}
-            noteToOpen={selectedNoteToOpen}
-            onNoteOpened={() => setSelectedNoteToOpen(null)}
-            allTasks={tasks}
-            onTaskClick={(task) => {
-              setSelectedTaskToOpen(task)
-              setActiveTab('tasks')
-            }}
-          />
+          <>
+            {/* Mobile Menu Bar for Notes */}
+            <div className="lg:hidden mb-4">
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl p-2 border border-gray-100 flex gap-2">
+                <button
+                  onClick={() => setTriggerNoteCreate(prev => prev + 1)}
+                  className="flex items-center gap-1 px-3 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all text-sm font-medium whitespace-nowrap"
+                >
+                  <Plus className="w-4 h-4" />
+                  Ny anteckning
+                </button>
+              </div>
+            </div>
+
+            <Notes
+              notes={notes}
+              onCreateNote={createNote}
+              onUpdateNote={updateNote}
+              onDeleteNote={deleteNote}
+              onCreateTask={createTask}
+              triggerCreate={triggerNoteCreate}
+              noteToOpen={selectedNoteToOpen}
+              onNoteOpened={() => setSelectedNoteToOpen(null)}
+              allTasks={tasks}
+              onTaskClick={(task) => {
+                setSelectedTaskToOpen(task)
+                setActiveTab('tasks')
+              }}
+            />
+          </>
         ) : (
           <>
             {/* Mobile Menu Bar */}
