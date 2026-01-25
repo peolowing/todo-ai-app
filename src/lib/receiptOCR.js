@@ -26,12 +26,22 @@ Returnera alltid ett JSON-objekt med följande struktur:
   "amount": 123.45,
   "vatAmount": 24.69,
   "vatRate": "25%",
+  "tipAmount": 10.00,
   "vendorName": "Företagsnamn AB",
   "orgNumber": "556677-8899",
   "category": "Material",
   "description": "Kort beskrivning av köpet",
   "rawText": "Fullständig OCR-text från kvittot"
 }
+
+VIKTIGT om belopp och moms:
+- "amount" ska vara TOTALT belopp inklusive moms (men exklusive dricks)
+- "vatAmount" är momsbeloppet som ingår i amount
+- "tipAmount" är dricks/tips (om det finns) - detta är INTE inkluderat i amount
+- Restaurangkvitton visar ofta: Subtotal (exkl moms) + Moms + Dricks = Total
+  * I det fallet: amount = Subtotal + Moms, tipAmount = Dricks
+- Beräkna moms korrekt: För 25% moms är momsbeloppet = amount * 0.25 / 1.25
+  För 12% moms: amount * 0.12 / 1.12
 
 Kategorier att välja från:
 - Material (verktyg, material, byggvaror)
@@ -44,12 +54,12 @@ Kategorier att välja från:
 
 Momssatser i Sverige:
 - 25% (normal moms - de flesta varor och tjänster)
-- 12% (livsmedel, restaurang)
+- 12% (livsmedel, restaurang, catering)
 - 6% (böcker, tidningar, kultur, transport)
 - 0% (momsbefriat - vissa finansiella tjänster, vård)
 
 Om information saknas, gör en rimlig gissning baserat på kontexten.
-Om totalt belopp inkluderar moms, beräkna momsbeloppet.`
+VIKTIGT: Läs kvittot noggrant och använd de faktiska beloppen som står på kvittot.`
         },
         {
           role: "user",

@@ -19,6 +19,7 @@ export default function ReceiptScanner({ user }) {
     amount: '',
     vatAmount: '',
     vatRate: '25%',
+    tipAmount: '',
     vendorName: '',
     orgNumber: '',
     category: 'Material',
@@ -88,10 +89,12 @@ export default function ReceiptScanner({ user }) {
         amount: scannedData.amount?.toString() || '',
         vatAmount: scannedData.vatAmount?.toString() || '',
         vatRate: scannedData.vatRate || '25%',
+        tipAmount: scannedData.tipAmount?.toString() || '',
         vendorName: scannedData.vendorName || '',
         orgNumber: scannedData.orgNumber || '',
         category: scannedData.category || 'Material',
-        description: scannedData.description || ''
+        description: scannedData.description || '',
+        listName: ''
       })
 
       toast.success('Kvitto inskannat!')
@@ -141,6 +144,7 @@ export default function ReceiptScanner({ user }) {
           amount: parseFloat(formData.amount),
           vat_amount: formData.vatAmount ? parseFloat(formData.vatAmount) : null,
           vat_rate: formData.vatRate,
+          tip_amount: formData.tipAmount ? parseFloat(formData.tipAmount) : null,
           vendor_name: formData.vendorName,
           org_number: formData.orgNumber || null,
           category: formData.category,
@@ -201,6 +205,7 @@ export default function ReceiptScanner({ user }) {
           amount: parseFloat(formData.amount),
           vat_amount: formData.vatAmount ? parseFloat(formData.vatAmount) : null,
           vat_rate: formData.vatRate,
+          tip_amount: formData.tipAmount ? parseFloat(formData.tipAmount) : null,
           vendor_name: formData.vendorName,
           org_number: formData.orgNumber || null,
           category: formData.category,
@@ -231,6 +236,7 @@ export default function ReceiptScanner({ user }) {
       amount: '',
       vatAmount: '',
       vatRate: '25%',
+      tipAmount: '',
       vendorName: '',
       orgNumber: '',
       category: 'Material',
@@ -246,6 +252,7 @@ export default function ReceiptScanner({ user }) {
       amount: receipt.amount.toString(),
       vatAmount: receipt.vat_amount?.toString() || '',
       vatRate: receipt.vat_rate || '25%',
+      tipAmount: receipt.tip_amount?.toString() || '',
       vendorName: receipt.vendor_name,
       orgNumber: receipt.org_number || '',
       category: receipt.category,
@@ -263,12 +270,13 @@ export default function ReceiptScanner({ user }) {
 
     try {
       const csv = [
-        ['Datum', 'Belopp', 'Moms', 'Momssats', 'Leverantör', 'Org.nr', 'Kategori', 'Beskrivning', 'Lista'].join(';'),
+        ['Datum', 'Belopp', 'Moms', 'Momssats', 'Dricks', 'Leverantör', 'Org.nr', 'Kategori', 'Beskrivning', 'Lista'].join(';'),
         ...filteredReceipts.map(r => [
           r.date,
           r.amount,
           r.vat_amount || '',
           r.vat_rate || '',
+          r.tip_amount || '',
           r.vendor_name,
           r.org_number || '',
           r.category,
@@ -400,6 +408,18 @@ export default function ReceiptScanner({ user }) {
                   <option key={rate} value={rate}>{rate}</option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Dricks (kr)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.tipAmount}
+                onChange={(e) => setFormData({ ...formData, tipAmount: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="0.00"
+              />
             </div>
 
             <div>
@@ -587,6 +607,18 @@ export default function ReceiptScanner({ user }) {
                     <option key={rate} value={rate}>{rate}</option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Dricks (kr)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.tipAmount}
+                  onChange={(e) => setFormData({ ...formData, tipAmount: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="0.00"
+                />
               </div>
 
               <div>
@@ -793,6 +825,9 @@ export default function ReceiptScanner({ user }) {
                         <p className="font-bold text-gray-900">{receipt.amount} kr</p>
                         {receipt.vat_amount && (
                           <p className="text-sm text-gray-600">Moms: {receipt.vat_amount} kr</p>
+                        )}
+                        {receipt.tip_amount && (
+                          <p className="text-sm text-gray-600">Dricks: {receipt.tip_amount} kr</p>
                         )}
                       </div>
                     </div>
